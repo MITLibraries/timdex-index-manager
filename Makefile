@@ -13,7 +13,7 @@ update: install ## Update all Python dependencies
 ### Test commands ###
 
 test: ## Run tests and print a coverage report
-	pipenv run coverage run --source=app -m pytest -vv
+	pipenv run coverage run --source=tim -m pytest -vv
 	pipenv run coverage report -m
 
 coveralls: test
@@ -24,13 +24,13 @@ coveralls: test
 lint: bandit black mypy pylama safety ## Run linting, code quality, and safety checks
 
 bandit:
-	pipenv run bandit -r app
+	pipenv run bandit -r tim
 
 black:
 	pipenv run black --check --diff .
 
 mypy:
-	pipenv run mypy app
+	pipenv run mypy tim
 
 pylama:
 	pipenv run pylama --options setup.cfg
