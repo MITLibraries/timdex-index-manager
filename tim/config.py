@@ -12,7 +12,7 @@ def configure_logger(logger: logging.Logger, verbose: bool) -> str:
         )
         logger.setLevel(logging.DEBUG)
         for handler in logging.root.handlers:
-            handler.addFilter(logging.Filter("app"))
+            handler.addFilter(logging.Filter("tim"))
     else:
         logging.basicConfig(
             format="%(asctime)s %(levelname)s %(name)s.%(funcName)s(): %(message)s"
