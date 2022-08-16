@@ -4,7 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+boto3 = "*"
 click = "*"
+opensearch-py = "*"
 sentry-sdk = "*"
 
 [dev-packages]
@@ -15,6 +17,7 @@ coveralls = "*"
 mypy = "*"
 pylama = {extras = ["all"], version = "*"}
 pytest = "*"
+vcrpy = "*"
 
 [requires]
 python_version = "3.10"

@@ -1,21 +1,40 @@
+import vcr
+
 from tim.cli import main
 
 
+@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
 def test_main_group_no_options_configures_correctly_and_invokes_result_callback(
+    caplog, monkeypatch, runner
+):
+    monkeypatch.delenv("OPENSEARCH_ENDPOINT", raising=False)
+    result = runner.invoke(main, ["ping"])
+    assert result.exit_code == 0
+    assert "Logger 'root' configured with level=INFO" in caplog.text
+    assert "OpenSearch client configured for endpoint 'localhost'" in caplog.text
+    assert "Total time to complete process" in caplog.text
+
+
+@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+def test_main_group_all_options_configures_correctly_and_invokes_result_callback(
+    caplog, monkeypatch, runner
+):
+    monkeypatch.delenv("OPENSEARCH_ENDPOINT", raising=False)
+    result = runner.invoke(main, ["--verbose", "--url", "localhost", "ping"])
+    assert result.exit_code == 0
+    assert "Logger 'root' configured with level=DEBUG" in caplog.text
+    assert "OpenSearch client configured for endpoint 'localhost'" in caplog.text
+    assert "Total time to complete process" in caplog.text
+
+
+@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+def test_main_group_options_from_env_configures_correctly_and_invokes_result_callback(
     caplog, runner
 ):
     result = runner.invoke(main, ["ping"])
     assert result.exit_code == 0
     assert "Logger 'root' configured with level=INFO" in caplog.text
-    assert "Total time to complete process" in caplog.text
-
-
-def test_main_group_all_options_configures_correctly_and_invokes_result_callback(
-    caplog, runner
-):
-    result = runner.invoke(main, ["--verbose", "ping"])
-    assert result.exit_code == 0
-    assert "Logger 'root' configured with level=DEBUG" in caplog.text
+    assert "OpenSearch client configured for endpoint 'localhost'" in caplog.text
     assert "Total time to complete process" in caplog.text
 
 
@@ -31,10 +50,11 @@ def test_indexes(caplog, runner):
     assert "'indexes' command not yet implemented" in caplog.text
 
 
+@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
 def test_ping(caplog, runner):
     result = runner.invoke(main, ["ping"])
     assert result.exit_code == 0
-    assert "'ping' command not yet implemented" in caplog.text
+    assert "'cluster_name': 'docker-cluster'" in caplog.text
 
 
 def test_ingest_no_options(caplog, runner):
