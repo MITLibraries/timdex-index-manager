@@ -1,0 +1,29 @@
+interactions:
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.3)
+      method: GET
+      uri: http://localhost:9200/
+    response:
+      body:
+        string:
+          "{\n  \"name\" : \"6370d6be26b2\",\n  \"cluster_name\" : \"docker-cluster\",\n
+          \ \"cluster_uuid\" : \"j7tpRLtKTsSRlyng3RELug\",\n  \"version\" : {\n    \"distribution\"
+          : \"opensearch\",\n    \"number\" : \"1.3.3\",\n    \"build_type\" : \"tar\",\n
+          \   \"build_hash\" : \"6d63fc707f6010c5980ec5cb51324856caf1f03d\",\n    \"build_date\"
+          : \"2022-06-07T15:24:06.598626Z\",\n    \"build_snapshot\" : false,\n    \"lucene_version\"
+          : \"8.10.1\",\n    \"minimum_wire_compatibility_version\" : \"6.8.0\",\n    \"minimum_index_compatibility_version\"
+          : \"6.0.0-beta1\"\n  },\n  \"tagline\" : \"The OpenSearch Project: https://opensearch.org/\"\n}\n"
+      headers:
+        content-length:
+          - "569"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+version: 1

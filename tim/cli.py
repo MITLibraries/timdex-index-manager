@@ -1,4 +1,5 @@
 import logging
+import pprint
 from datetime import timedelta
 from time import perf_counter
 from typing import Optional
@@ -6,21 +7,34 @@ from typing import Optional
 import click
 
 from tim.config import configure_logger, configure_sentry
+from tim.opensearch import configure_opensearch_client
 
 logger = logging.getLogger(__name__)
 
 
 @click.group()
 @click.option(
+    "-u",
+    "--url",
+    envvar="OPENSEARCH_ENDPOINT",
+    default="localhost",
+    help="The OpenSearch instance endpoint minus the http scheme, e.g. "
+    "'search-timdex-env-1234567890.us-east-1.es.amazonaws.com'. If not provided, will "
+    "attempt to get from the OPENSEARCH_ENDPOINT environment variable. Defaults to "
+    "'localhost'.",
+)
+@click.option(
     "-v", "--verbose", is_flag=True, help="Pass to log at debug level instead of info"
 )
 @click.pass_context
-def main(ctx: click.Context, verbose: bool) -> None:
+def main(ctx: click.Context, url: str, verbose: bool) -> None:
     ctx.ensure_object(dict)
     ctx.obj["START_TIME"] = perf_counter()
     root_logger = logging.getLogger()
     logger.info(configure_logger(root_logger, verbose))
     logger.info(configure_sentry())
+    ctx.obj["CLIENT"] = configure_opensearch_client(url)
+    logger.info("OpenSearch client configured for endpoint '%s'", url)
 
 
 @main.result_callback()
@@ -60,13 +74,12 @@ def indexes() -> None:
 
 
 @main.command()
-def ping() -> None:
-    """
-    Ping OpenSearch.
-
-    Display the following: name, cluster, version, Lucene version.
-    """
-    logger.info("'ping' command not yet implemented")
+@click.pass_context
+def ping(ctx: click.Context) -> None:
+    """Ping OpenSearch and display information about the cluster."""
+    client = ctx.obj["CLIENT"]
+    output = pprint.pformat(client.info(), indent=2)
+    logger.info(output)
 
 
 # Index commands
