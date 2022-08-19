@@ -44,17 +44,18 @@ def test_aliases(caplog, runner):
     assert "'aliases' command not yet implemented" in caplog.text
 
 
-def test_indexes(caplog, runner):
+@vcr.use_cassette("tests/fixtures/cassettes/list_indexes.yaml")
+def test_indexes(runner):
     result = runner.invoke(main, ["indexes"])
     assert result.exit_code == 0
-    assert "'indexes' command not yet implemented" in caplog.text
+    assert "Name: test-index" in result.stdout
 
 
 @vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
-def test_ping(caplog, runner):
+def test_ping(runner):
     result = runner.invoke(main, ["ping"])
     assert result.exit_code == 0
-    assert "'cluster_name': 'docker-cluster'" in caplog.text
+    assert "Name: docker-cluster" in result.stdout
 
 
 def test_ingest_no_options(caplog, runner):

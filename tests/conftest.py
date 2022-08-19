@@ -3,6 +3,8 @@ import os
 import pytest
 from click.testing import CliRunner
 
+from tim.opensearch import configure_opensearch_client
+
 
 @pytest.fixture(autouse=True)
 def test_env():
@@ -15,6 +17,11 @@ def test_env():
         "WORKSPACE": "test",
     }
     yield
+
+
+@pytest.fixture()
+def test_opensearch_client():
+    return configure_opensearch_client("localhost")
 
 
 @pytest.fixture()

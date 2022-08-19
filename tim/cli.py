@@ -1,5 +1,4 @@
 import logging
-import pprint
 from datetime import timedelta
 from time import perf_counter
 from typing import Optional
@@ -7,7 +6,7 @@ from typing import Optional
 import click
 
 from tim.config import configure_logger, configure_sentry
-from tim.opensearch import configure_opensearch_client
+from tim.opensearch import configure_opensearch_client, get_info, list_indexes
 
 logger = logging.getLogger(__name__)
 
@@ -62,24 +61,23 @@ def aliases() -> None:
 
 
 @main.command()
-def indexes() -> None:
+@click.pass_context
+def indexes(ctx: click.Context) -> None:
     """
-    List all OpenSearch indexes.
+    Display summary information about all indexes in the cluster.
 
-    Find all indexes in the OpenSearch cluster. List the indexes in alphabetical order
-    by name. For each index, display: index name, number of documents, health, status,
-    UUID, size.
+    Prints all indexes in the cluster in alphabetical order by name. For each index,
+    displays information including its status, health, number of documents, primary
+    store size, total store size, and UUID.
     """
-    logger.info("'indexes' command not yet implemented")
+    click.echo(list_indexes(ctx.obj["CLIENT"]))
 
 
 @main.command()
 @click.pass_context
 def ping(ctx: click.Context) -> None:
     """Ping OpenSearch and display information about the cluster."""
-    client = ctx.obj["CLIENT"]
-    output = pprint.pformat(client.info(), indent=2)
-    logger.info(output)
+    click.echo(get_info(ctx.obj["CLIENT"]))
 
 
 # Index commands
