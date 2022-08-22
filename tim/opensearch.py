@@ -28,27 +28,49 @@ def configure_opensearch_client(url: str) -> OpenSearch:
 def get_info(client: OpenSearch) -> str:
     response = client.info()
     return (
-        f"\nName: {response['cluster_name']}\n"
-        f"UUID: {response['cluster_uuid']}\n"
-        f"OpenSearch version: {response['version']['number']}\n"
-        f"Lucene version: {response['version']['lucene_version']}\n"
+        f"\nName: {response['cluster_name']}"
+        f"\nUUID: {response['cluster_uuid']}"
+        f"\nOpenSearch version: {response['version']['number']}"
+        f"\nLucene version: {response['version']['lucene_version']}\n"
     )
 
 
-def list_indexes(client: OpenSearch) -> str:
-    response = client.cat.indices(format="json")
-    if not response:
-        return "No indexes present in OpenSearch cluster."
-    indices = sorted(response, key=itemgetter("index"))
+def list_aliases(client: OpenSearch) -> str:
+    response_list = client.cat.aliases(format="json")
+    if not response_list:
+        return "No aliases present in OpenSearch cluster."
+
+    aliases: dict = {}
+    for item in response_list:
+        aliases.setdefault(item["alias"], []).append(item["index"])
+
     output = ""
-    for index in indices:
+    for alias, indices in aliases.items():
+        output += f"\nAlias: {alias}"
+        indexes = ", ".join(sorted(indices))
+        output += f"\n  Indexes: {indexes}\n"
+    return output
+
+
+def list_indexes(client: OpenSearch) -> str:
+    indices_response = client.cat.indices(format="json")
+    if not indices_response:
+        return "No indexes present in OpenSearch cluster."
+
+    output = ""
+    indexes = sorted(indices_response, key=itemgetter("index"))
+    for index in indexes:
+        index_name = index["index"]
+        aliases_response = client.indices.get_alias(index=index_name)
+        aliases = aliases_response[index_name]["aliases"].keys()
         output += (
-            f"\nName: {index['index']}\n"
-            f"\tStatus: {index['status']}\n"
-            f"\tHealth: {index['health']}\n"
-            f"\tDocuments: {int(index['docs.count']):,}\n"
-            f"\tPrimary store size: {index['pri.store.size']}\n"
-            f"\tTotal store size: {index['store.size']}\n"
-            f"\tUUID: {index['uuid']}\n"
+            f"\nName: {index_name}\n"
+            f"  Aliases: {', '.join(aliases) or 'None'}\n"
+            f"  Status: {index['status']}\n"
+            f"  Health: {index['health']}\n"
+            f"  Documents: {int(index['docs.count']):,}\n"
+            f"  Primary store size: {index['pri.store.size']}\n"
+            f"  Total store size: {index['store.size']}\n"
+            f"  UUID: {index['uuid']}\n"
         )
     return output

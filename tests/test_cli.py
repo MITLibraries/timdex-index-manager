@@ -38,17 +38,18 @@ def test_main_group_options_from_env_configures_correctly_and_invokes_result_cal
     assert "Total time to complete process" in caplog.text
 
 
-def test_aliases(caplog, runner):
+@vcr.use_cassette("tests/fixtures/cassettes/list_aliases.yaml")
+def test_aliases(runner):
     result = runner.invoke(main, ["aliases"])
     assert result.exit_code == 0
-    assert "'aliases' command not yet implemented" in caplog.text
+    assert "Alias: alias-with-multiple-indexes" in result.stdout
 
 
 @vcr.use_cassette("tests/fixtures/cassettes/list_indexes.yaml")
 def test_indexes(runner):
     result = runner.invoke(main, ["indexes"])
     assert result.exit_code == 0
-    assert "Name: test-index" in result.stdout
+    assert "Name: index-with-multiple-aliases" in result.stdout
 
 
 @vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
