@@ -5,8 +5,8 @@ from typing import Optional
 
 import click
 
+from tim import opensearch as tim_os
 from tim.config import configure_logger, configure_sentry
-from tim.opensearch import configure_opensearch_client, get_info, list_indexes
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def main(ctx: click.Context, url: str, verbose: bool) -> None:
     root_logger = logging.getLogger()
     logger.info(configure_logger(root_logger, verbose))
     logger.info(configure_sentry())
-    ctx.obj["CLIENT"] = configure_opensearch_client(url)
+    ctx.obj["CLIENT"] = tim_os.configure_opensearch_client(url)
     logger.info("OpenSearch client configured for endpoint '%s'", url)
 
 
@@ -51,13 +51,14 @@ def log_process_time(
 
 
 @main.command()
-def aliases() -> None:
+@click.pass_context
+def aliases(ctx: click.Context) -> None:
     """List OpenSearch aliases and their associated indexes.
 
     Find all aliases in the OpenSearch instance. For each alias, list the names of all
     indexes associated with that alias in alphabetical order.
     """
-    logger.info("'aliases' command not yet implemented")
+    click.echo(tim_os.list_aliases(ctx.obj["CLIENT"]))
 
 
 @main.command()
@@ -70,14 +71,14 @@ def indexes(ctx: click.Context) -> None:
     displays information including its status, health, number of documents, primary
     store size, total store size, and UUID.
     """
-    click.echo(list_indexes(ctx.obj["CLIENT"]))
+    click.echo(tim_os.list_indexes(ctx.obj["CLIENT"]))
 
 
 @main.command()
 @click.pass_context
 def ping(ctx: click.Context) -> None:
     """Ping OpenSearch and display information about the cluster."""
-    click.echo(get_info(ctx.obj["CLIENT"]))
+    click.echo(tim_os.get_info(ctx.obj["CLIENT"]))
 
 
 # Index commands

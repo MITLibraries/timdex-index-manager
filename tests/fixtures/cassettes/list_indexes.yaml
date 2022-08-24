@@ -1,22 +1,82 @@
 interactions:
-- request:
-    body: null
-    headers:
-      content-type:
-      - application/json
-      user-agent:
-      - opensearch-py/2.0.0 (Python 3.10.6)
-    method: GET
-    uri: http://localhost:9200/_cat/indices?format=json
-  response:
-    body:
-      string: '[{"health":"yellow","status":"open","index":"test-index","uuid":"CutX-ZdNRa-Novw8vdTXIg","pri":"1","rep":"1","docs.count":"0","docs.deleted":"0","store.size":"208b","pri.store.size":"208b"}]'
-    headers:
-      content-length:
-      - '190'
-      content-type:
-      - application/json; charset=UTF-8
-    status:
-      code: 200
-      message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/_cat/indices?format=json
+    response:
+      body:
+        string: '[{"health":"yellow","status":"open","index":"index-with-multiple-aliases","uuid":"60Gq-vaAScOKGXkG_JAw5A","pri":"1","rep":"1","docs.count":"0","docs.deleted":"0","store.size":"208b","pri.store.size":"208b"},{"health":"yellow","status":"open","index":"index-with-no-aliases","uuid":"KqVlOA5lTw-fXZA2TEqi_g","pri":"1","rep":"1","docs.count":"0","docs.deleted":"0","store.size":"208b","pri.store.size":"208b"},{"health":"yellow","status":"open","index":"index-with-one-alias","uuid":"q-NKXPp3SuWiDKhPkUxP-g","pri":"1","rep":"1","docs.count":"0","docs.deleted":"0","store.size":"208b","pri.store.size":"208b"}]'
+      headers:
+        content-length:
+          - "606"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/index-with-multiple-aliases/_alias
+    response:
+      body:
+        string: '{"index-with-multiple-aliases":{"aliases":{"alias-with-multiple-indexes":{},"alias-with-one-index":{}}}}'
+      headers:
+        content-length:
+          - "104"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/index-with-no-aliases/_alias
+    response:
+      body:
+        string: '{"index-with-no-aliases":{"aliases":{}}}'
+      headers:
+        content-length:
+          - "40"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/index-with-one-alias/_alias
+    response:
+      body:
+        string: '{"index-with-one-alias":{"aliases":{"alias-with-multiple-indexes":{}}}}'
+      headers:
+        content-length:
+          - "71"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
 version: 1
