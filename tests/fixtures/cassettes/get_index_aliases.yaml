@@ -1,0 +1,22 @@
+interactions:
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/test-index/_alias
+    response:
+      body:
+        string: '{"test-index":{"aliases":{"bird":{},"cat":{},"dog":{},"fish":{}},"number_of_replicas":"1","uuid":"Fzeg5pbuSr-nftjEVq7Rlw","version":{"created":"135248127"}}}'
+      headers:
+        content-length:
+          - "4931"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+version: 1

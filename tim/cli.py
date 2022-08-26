@@ -11,6 +11,9 @@ from tim.config import configure_logger, configure_sentry
 logger = logging.getLogger(__name__)
 
 
+# Main command group
+
+
 @click.group()
 @click.option(
     "-u",
@@ -47,7 +50,7 @@ def log_process_time(
     )
 
 
-# OpenSearch instance commands
+# Cluster commands
 
 
 @main.command()
@@ -58,7 +61,7 @@ def aliases(ctx: click.Context) -> None:
     Find all aliases in the OpenSearch instance. For each alias, list the names of all
     indexes associated with that alias in alphabetical order.
     """
-    click.echo(tim_os.list_aliases(ctx.obj["CLIENT"]))
+    click.echo(tim_os.get_formatted_aliases(ctx.obj["CLIENT"]))
 
 
 @main.command()
@@ -71,14 +74,14 @@ def indexes(ctx: click.Context) -> None:
     displays information including its status, health, number of documents, primary
     store size, total store size, and UUID.
     """
-    click.echo(tim_os.list_indexes(ctx.obj["CLIENT"]))
+    click.echo(tim_os.get_formatted_indexes(ctx.obj["CLIENT"]))
 
 
 @main.command()
 @click.pass_context
 def ping(ctx: click.Context) -> None:
     """Ping OpenSearch and display information about the cluster."""
-    click.echo(tim_os.get_info(ctx.obj["CLIENT"]))
+    click.echo(tim_os.get_formatted_info(ctx.obj["CLIENT"]))
 
 
 # Index commands
