@@ -1,0 +1,67 @@
+interactions:
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/_cat/indices?format=json
+    response:
+      body:
+        string: "[]"
+      headers:
+        content-length:
+          - "2"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/_cat/aliases?format=json
+    response:
+      body:
+        string: "[]"
+      headers:
+        content-length:
+          - "2"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: '{"actions":[{"add":{"index":"not-an-index","alias":"all-current"}}]}'
+      headers:
+        Content-Length:
+          - "68"
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: POST
+      uri: http://localhost:9200/_aliases
+    response:
+      body:
+        string:
+          '{"error":{"root_cause":[{"type":"index_not_found_exception","reason":"no
+          such index [not-an-index]","index":"not-an-index","resource.id":"not-an-index","resource.type":"index_or_alias","index_uuid":"_na_"}],"type":"index_not_found_exception","reason":"no
+          such index [not-an-index]","index":"not-an-index","resource.id":"not-an-index","resource.type":"index_or_alias","index_uuid":"_na_"},"status":404}'
+      headers:
+        content-length:
+          - "401"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 404
+        message: Not Found
+version: 1

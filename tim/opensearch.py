@@ -4,6 +4,9 @@ from typing import Optional
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+from opensearchpy.exceptions import NotFoundError
+
+from tim.config import PRIMARY_ALIAS
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +104,36 @@ def get_formatted_indexes(client: OpenSearch) -> str:
     return "\nNo indexes present in OpenSearch cluster.\n"
 
 
+def get_all_aliased_indexes_for_source(
+    client: OpenSearch, source: str
+) -> Optional[dict[str, list[str]]]:
+    """Return all aliased indexes for the source, grouped by alias.
+
+    Returns a dict of the aliases with a list of the source index(es) for each. There
+    *should* only be one source index per alias, but in case there is ever more than
+    one, this function will return the accurate information and log an error for
+    further investigation.
+
+    Returns None if there are no aliased indexes for the source.
+    """
+    result = {}
+    if aliases := get_aliases(client):
+        logger.debug(aliases)
+        for alias, indexes in aliases.items():
+            source_indexes = [
+                index for index in indexes if index.split("-")[0] == source
+            ]
+            if len(source_indexes) > 1:
+                logger.error(
+                    "Alias '%s' had multiple existing indexes for source '%s': %s",
+                    alias,
+                    source,
+                    source_indexes,
+                )
+            result[alias] = source_indexes
+    return {k: v for k, v in result.items() if v} or None
+
+
 # Index functions
 
 
@@ -113,3 +146,50 @@ def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:
     logger.debug(response)
     aliases = response[index].get("aliases")
     return sorted(aliases.keys()) or None
+
+
+def promote_index(
+    client: OpenSearch, index: str, extra_aliases: Optional[tuple[str]] = None
+) -> None:
+    """Promote an index to all relevant aliases.
+
+    Promotes an index to the primary alias (always), all aliases that contain an
+    existing index for the same source (if any), and any aliases supplied in
+    `extra_aliases`. If a supplied alias does not exist, it will be created.
+
+    Promoting an index to an alias always demotes any existing index(es) for the same
+    source in that alias. This action is atomic.
+
+    Source is determined by the index name prefix.
+
+    Raises an exception if the supplied index does not exist.
+    """
+    source = index.split("-")[0]
+    current_aliased_source_indexes = (
+        get_all_aliased_indexes_for_source(client, source) or {}
+    )
+    new_aliases = list(extra_aliases) if extra_aliases else []
+    all_aliases = set(
+        [PRIMARY_ALIAS] + list(current_aliased_source_indexes.keys()) + new_aliases
+    )
+
+    request_body = {
+        "actions": [{"add": {"index": index, "alias": alias}} for alias in all_aliases]
+    }
+
+    for alias, indexes in current_aliased_source_indexes.items():
+        request_body["actions"].extend(
+            [
+                {"remove": {"index": existing_index, "alias": alias}}
+                for existing_index in indexes
+                if existing_index != index
+            ]
+        )
+
+    # Sending both the alias additions and demotions in one request to OpenSearch
+    # ensures the action is atomic (OpenSearch handles that).
+    try:
+        response = client.indices.update_aliases(body=request_body)
+        logger.debug(response)
+    except NotFoundError as error:
+        raise ValueError(f"Index '{index}' not present in Cluster.") from error

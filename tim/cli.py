@@ -134,13 +134,34 @@ def ingest(
 @click.option(
     "-i", "--index", required=True, help="Name of the OpenSearch index to promote."
 )
-def promote(index: str) -> None:  # noqa
+@click.option(
+    "-a",
+    "--alias",
+    multiple=True,
+    help="Alias to promote the index to in addition to the primary alias. May "
+    "be repeated to promote the index to multiple aliases at once.",
+)
+@click.pass_context
+def promote(ctx: click.Context, index: str, alias: Optional[tuple[str]]) -> None:
     """
-    Promote an index to the production alias.
+    Promote an index to the primary alias and add it to any additional provided aliases.
 
-    Demotes the existing production index for the provided source if there is one.
+    This command promotes an index to the primary alias, any alias that already has an
+    index for the same source, and any additional alias(es) passed to the command. If
+    there is already an index for the source in any alias it is promoted to, the
+    existing index will be demoted.
+
+    This action is atomic.
     """
-    logger.info("'promote' command not yet implemented")
+    client = ctx.obj["CLIENT"]
+    tim_os.promote_index(client, index, extra_aliases=alias)
+    logger.info(
+        "Index promoted. Current aliases for index '%s': %s",
+        index,
+        tim_os.get_index_aliases(client, index),
+    )
+    click.echo("Current state of all aliases:")
+    ctx.invoke(aliases)
 
 
 @main.command()

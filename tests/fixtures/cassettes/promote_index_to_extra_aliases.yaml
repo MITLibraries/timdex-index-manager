@@ -1,0 +1,84 @@
+interactions:
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/_cat/aliases?format=json
+    response:
+      body:
+        string: '[{"alias":"all-current","index":"testsource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"all-current","index":"othersource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"existing-alias","index":"othersource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
+      headers:
+        content-length:
+          - "384"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/_cat/aliases?format=json
+    response:
+      body:
+        string: '[{"alias":"all-current","index":"testsource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"all-current","index":"othersource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"existing-alias","index":"othersource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
+      headers:
+        content-length:
+          - "384"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: '{"actions":[{"add":{"index":"testsource-index","alias":"existing-alias"}},{"add":{"index":"testsource-index","alias":"all-current"}},{"add":{"index":"testsource-index","alias":"new-alias"}}]}'
+      headers:
+        Content-Length:
+          - "191"
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: POST
+      uri: http://localhost:9200/_aliases
+    response:
+      body:
+        string: '{"acknowledged":true}'
+      headers:
+        content-length:
+          - "21"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: GET
+      uri: http://localhost:9200/_cat/aliases?format=json
+    response:
+      body:
+        string: '[{"alias":"all-current","index":"testsource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"existing-alias","index":"testsource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"new-alias","index":"testsource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"all-current","index":"othersource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"},{"alias":"existing-alias","index":"othersource-index","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
+      headers:
+        content-length:
+          - "637"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+version: 1
