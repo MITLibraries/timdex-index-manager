@@ -86,10 +86,11 @@ def test_ingest_all_options(caplog, runner):
     assert "'ingest' command not yet implemented" in caplog.text
 
 
+@vcr.use_cassette("tests/fixtures/cassettes/promote_index.yaml")
 def test_promote(caplog, runner):
-    result = runner.invoke(main, ["promote", "-i", "test-index"])
+    result = runner.invoke(main, ["promote", "-i", "testsource-index"])
     assert result.exit_code == 0
-    assert "'promote' command not yet implemented" in caplog.text
+    assert "Index promoted" in caplog.text
 
 
 def test_reindex(caplog, runner):

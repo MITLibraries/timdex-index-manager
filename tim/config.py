@@ -3,6 +3,8 @@ import os
 
 import sentry_sdk
 
+PRIMARY_ALIAS = "all-current"
+
 
 def configure_logger(logger: logging.Logger, verbose: bool) -> str:
     if verbose:
