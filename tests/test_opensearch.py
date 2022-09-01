@@ -2,9 +2,10 @@ import logging
 from unittest import mock
 
 import pytest
-import vcr
 
 from tim import opensearch as tim_os
+
+from .conftest import my_vcr
 
 # Cluster functions
 
@@ -23,7 +24,7 @@ def test_configure_opensearch_client_for_aws(mocked_boto3_session):  # noqa
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+@my_vcr.use_cassette("ping_localhost.yaml")
 def test_get_formatted_info(test_opensearch_client):
     assert tim_os.get_formatted_info(test_opensearch_client) == (
         "\nName: docker-cluster"
@@ -34,7 +35,7 @@ def test_get_formatted_info(test_opensearch_client):
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_aliases.yaml")
+@my_vcr.use_cassette("get_aliases.yaml")
 def test_get_aliases(test_opensearch_client):
     assert tim_os.get_aliases(test_opensearch_client) == {
         "alias-with-multiple-indexes": [
@@ -45,12 +46,12 @@ def test_get_aliases(test_opensearch_client):
     }
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_aliases_none_present.yaml")
+@my_vcr.use_cassette("get_aliases_none_present.yaml")
 def test_get_aliases_no_aliases_present(test_opensearch_client):
     assert tim_os.get_aliases(test_opensearch_client) is None
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_aliases.yaml")
+@my_vcr.use_cassette("get_aliases.yaml")
 def test_get_formatted_aliases(test_opensearch_client):
     assert tim_os.get_formatted_aliases(test_opensearch_client) == (
         "\nAlias: alias-with-multiple-indexes"
@@ -60,14 +61,14 @@ def test_get_formatted_aliases(test_opensearch_client):
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_aliases_none_present.yaml")
+@my_vcr.use_cassette("get_aliases_none_present.yaml")
 def test_get_formatted_aliases_no_aliases_present(test_opensearch_client):
     assert tim_os.get_formatted_aliases(test_opensearch_client) == (
         "\nNo aliases present in OpenSearch cluster.\n"
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_indexes.yaml")
+@my_vcr.use_cassette("get_indexes.yaml")
 def test_get_indexes(test_opensearch_client):
     assert tim_os.get_indexes(test_opensearch_client) == {
         "index-with-multiple-aliases": {
@@ -106,7 +107,7 @@ def test_get_indexes(test_opensearch_client):
     }
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_indexes.yaml")
+@my_vcr.use_cassette("get_indexes.yaml")
 def test_get_formatted_indexes(test_opensearch_client):
     assert tim_os.get_formatted_indexes(test_opensearch_client) == (
         "\nName: index-with-multiple-aliases"
@@ -139,14 +140,14 @@ def test_get_formatted_indexes(test_opensearch_client):
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_indexes_none_present.yaml")
+@my_vcr.use_cassette("get_indexes_none_present.yaml")
 def test_get_formatted_indexes_no_indexes_present(test_opensearch_client):
     assert tim_os.get_formatted_indexes(test_opensearch_client) == (
         "\nNo indexes present in OpenSearch cluster.\n"
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_all_aliased_indexes_for_source.yaml")
+@my_vcr.use_cassette("get_all_aliased_indexes_for_source.yaml")
 def test_get_all_aliased_indexes_for_source(test_opensearch_client):
     assert tim_os.get_aliases(test_opensearch_client) == {
         "another-alias": ["testsource-index-two"],
@@ -160,9 +161,7 @@ def test_get_all_aliased_indexes_for_source(test_opensearch_client):
     }
 
 
-@vcr.use_cassette(
-    "tests/fixtures/cassettes/get_all_aliased_indexes_for_source_no_aliases.yaml"
-)
+@my_vcr.use_cassette("get_all_aliased_indexes_for_source_no_aliases.yaml")
 def test_get_all_aliased_indexes_for_source_no_aliases(test_opensearch_client):
     assert list(tim_os.get_indexes(test_opensearch_client).keys()) == [
         "testsource-index"
@@ -174,8 +173,7 @@ def test_get_all_aliased_indexes_for_source_no_aliases(test_opensearch_client):
     )
 
 
-@vcr.use_cassette(
-    "tests/fixtures/cassettes/"
+@my_vcr.use_cassette(
     "get_all_aliased_indexes_for_source_no_aliased_indexes_for_source.yaml"
 )
 def test_get_all_aliased_indexes_for_source_no_aliased_indexes_for_source(
@@ -194,8 +192,7 @@ def test_get_all_aliased_indexes_for_source_no_aliased_indexes_for_source(
     )
 
 
-@vcr.use_cassette(
-    "tests/fixtures/cassettes/"
+@my_vcr.use_cassette(
     "get_all_aliased_indexes_for_source_mulitple_source_indexes_with_alias.yaml"
 )
 def test_get_all_aliased_indexes_for_source_multi_source_indexes_with_alias_logs_error(
@@ -219,12 +216,12 @@ def test_get_all_aliased_indexes_for_source_multi_source_indexes_with_alias_logs
 # Index functions
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_index_aliases_none_present.yaml")
+@my_vcr.use_cassette("get_index_aliases_none_present.yaml")
 def test_get_index_aliases_no_aliases_set(test_opensearch_client):
     assert tim_os.get_index_aliases(test_opensearch_client, "test-index") is None
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_index_aliases.yaml")
+@my_vcr.use_cassette("get_index_aliases.yaml")
 def test_get_index_aliases_returns_sorted_aliases(test_opensearch_client):
     assert tim_os.get_index_aliases(test_opensearch_client, "test-index") == [
         "bird",
@@ -234,7 +231,7 @@ def test_get_index_aliases_returns_sorted_aliases(test_opensearch_client):
     ]
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/promote_index_to_primary_alias.yaml")
+@my_vcr.use_cassette("promote_index_to_primary_alias.yaml")
 def test_promote_index_always_promotes_to_primary_alias(test_opensearch_client):
     assert "testsource-index" not in tim_os.get_aliases(test_opensearch_client).get(
         "all-current"
@@ -245,7 +242,7 @@ def test_promote_index_always_promotes_to_primary_alias(test_opensearch_client):
     )
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/promote_index_demotes_existing.yaml")
+@my_vcr.use_cassette("promote_index_demotes_existing.yaml")
 def test_promote_index_promotes_to_existing_aliases_for_source_and_demotes_old_index(
     test_opensearch_client,
 ):
@@ -260,7 +257,7 @@ def test_promote_index_promotes_to_existing_aliases_for_source_and_demotes_old_i
     }
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/promote_index_to_extra_aliases.yaml")
+@my_vcr.use_cassette("promote_index_to_extra_aliases.yaml")
 def test_promote_index_promotes_to_extra_aliases_and_creates_if_not_present(
     test_opensearch_client,
 ):
@@ -280,7 +277,7 @@ def test_promote_index_promotes_to_extra_aliases_and_creates_if_not_present(
     }
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/promote_index_not_present.yaml")
+@my_vcr.use_cassette("promote_index_not_present.yaml")
 def test_promote_index_not_present_raises_error(test_opensearch_client):
     assert tim_os.get_indexes(test_opensearch_client) is None
     with pytest.raises(ValueError) as error:

@@ -1,9 +1,9 @@
-import vcr
-
 from tim.cli import main
 
+from .conftest import my_vcr
 
-@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+
+@my_vcr.use_cassette("ping_localhost.yaml")
 def test_main_group_no_options_configures_correctly_and_invokes_result_callback(
     caplog, monkeypatch, runner
 ):
@@ -15,7 +15,7 @@ def test_main_group_no_options_configures_correctly_and_invokes_result_callback(
     assert "Total time to complete process" in caplog.text
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+@my_vcr.use_cassette("ping_localhost.yaml")
 def test_main_group_all_options_configures_correctly_and_invokes_result_callback(
     caplog, monkeypatch, runner
 ):
@@ -27,7 +27,7 @@ def test_main_group_all_options_configures_correctly_and_invokes_result_callback
     assert "Total time to complete process" in caplog.text
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+@my_vcr.use_cassette("ping_localhost.yaml")
 def test_main_group_options_from_env_configures_correctly_and_invokes_result_callback(
     caplog, runner
 ):
@@ -38,21 +38,21 @@ def test_main_group_options_from_env_configures_correctly_and_invokes_result_cal
     assert "Total time to complete process" in caplog.text
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_aliases.yaml")
+@my_vcr.use_cassette("get_aliases.yaml")
 def test_aliases(runner):
     result = runner.invoke(main, ["aliases"])
     assert result.exit_code == 0
     assert "Alias: alias-with-multiple-indexes" in result.stdout
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/get_indexes.yaml")
+@my_vcr.use_cassette("get_indexes.yaml")
 def test_indexes(runner):
     result = runner.invoke(main, ["indexes"])
     assert result.exit_code == 0
     assert "Name: index-with-multiple-aliases" in result.stdout
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/ping_localhost.yaml")
+@my_vcr.use_cassette("ping_localhost.yaml")
 def test_ping(runner):
     result = runner.invoke(main, ["ping"])
     assert result.exit_code == 0
@@ -86,7 +86,7 @@ def test_ingest_all_options(caplog, runner):
     assert "'ingest' command not yet implemented" in caplog.text
 
 
-@vcr.use_cassette("tests/fixtures/cassettes/promote_index.yaml")
+@my_vcr.use_cassette("promote_index.yaml")
 def test_promote(caplog, runner):
     result = runner.invoke(main, ["promote", "-i", "testsource-index"])
     assert result.exit_code == 0
