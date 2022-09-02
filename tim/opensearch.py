@@ -1,12 +1,19 @@
+import json
 import logging
 import os
-from typing import Optional
+from typing import Iterator, Optional
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from opensearchpy.exceptions import NotFoundError
+from opensearchpy.helpers import streaming_bulk
 
-from tim.config import PRIMARY_ALIAS
+from tim import helpers
+from tim.config import (
+    PRIMARY_ALIAS,
+    configure_index_settings,
+    opensearch_request_timeout,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +128,9 @@ def get_all_aliased_indexes_for_source(
         logger.debug(aliases)
         for alias, indexes in aliases.items():
             source_indexes = [
-                index for index in indexes if index.split("-")[0] == source
+                index
+                for index in indexes
+                if helpers.get_source_from_index(index) == source
             ]
             if len(source_indexes) > 1:
                 logger.error(
@@ -137,6 +146,39 @@ def get_all_aliased_indexes_for_source(
 # Index functions
 
 
+def create_index(client: OpenSearch, name: str) -> str:
+    """Create an index with the provided name.
+
+    Creates the index with settings and mappings from config. Returns the index name.
+    """
+    mappings, settings = configure_index_settings()
+    request_body = json.dumps({"settings": settings, "mappings": mappings})
+    response = client.indices.create(name, body=request_body)
+    logger.debug(response)
+    return response["index"]
+
+
+def get_or_create_index_from_source(client: OpenSearch, source: str, new: bool) -> str:
+    """Get the primary index for the provided source or create a new index.
+
+    If new is True, always creates a new index. Otherwise, gets and returns the primary
+    index if there is one and creates a new index if not.
+
+    Note: if a new index is created, this function does *not* promote it to the primary
+    alias. That needs to be handled separately.
+    """
+    if new is False:
+        if index := get_primary_index_for_source(client, source):
+            logger.debug("Primary index found for source '%s': %s", source, index)
+            return index
+        logger.debug(
+            "No current primary index found for source '%s', creating a new index.",
+            source,
+        )
+    new_index_name = helpers.generate_index_name(source)
+    return create_index(client, new_index_name)
+
+
 def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:
     """Return a sorted list of aliases assigned to an index.
 
@@ -148,8 +190,17 @@ def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:
     return sorted(aliases.keys()) or None
 
 
+def get_primary_index_for_source(client: OpenSearch, source: str) -> Optional[str]:
+    """Get the primary index for the provided source.
+
+    Returns None if there is no primary index for the source.
+    """
+    aliases = get_all_aliased_indexes_for_source(client, source)
+    return aliases.get(PRIMARY_ALIAS, [])[0] if aliases else None
+
+
 def promote_index(
-    client: OpenSearch, index: str, extra_aliases: Optional[tuple[str]] = None
+    client: OpenSearch, index: str, extra_aliases: Optional[list[str]] = None
 ) -> None:
     """Promote an index to all relevant aliases.
 
@@ -164,7 +215,7 @@ def promote_index(
 
     Raises an exception if the supplied index does not exist.
     """
-    source = index.split("-")[0]
+    source = helpers.get_source_from_index(index)
     current_aliased_source_indexes = (
         get_all_aliased_indexes_for_source(client, source) or {}
     )
@@ -193,3 +244,60 @@ def promote_index(
         logger.debug(response)
     except NotFoundError as error:
         raise ValueError(f"Index '{index}' not present in Cluster.") from error
+
+
+# Record functions
+
+
+def bulk_index(
+    client: OpenSearch, index: str, records: Iterator[dict]
+) -> dict[str, int]:
+    """Indexes records into an existing index using the streaming bulk helper.
+
+    This action function uses the OpenSearch "index" action, which is a
+    combination of create and update: if a record with the same _id exists in the
+    index, it will be updated. If it does not exist, the record will be indexed as a
+    new document.
+
+    If an error occurs during record indexing, it will be logged and bulk indexing will
+    continue until all records have been processed.
+
+    Returns total sums of: records created, records updated, errors, and total records
+    processed.
+    """
+    result = {"created": 0, "updated": 0, "errors": 0, "total": 0}
+    actions = helpers.generate_bulk_actions(index, records, "index")
+    responses = streaming_bulk(
+        client,
+        actions,
+        max_retries=3,
+        raise_on_error=False,
+        request_timeout=opensearch_request_timeout(),
+    )
+    for response in responses:
+        if response[0] is False:
+            logger.error(
+                "Error indexing record '%s'. Details: %s",
+                response[1]["index"]["_id"],
+                json.dumps(response[1]["index"]["error"]),
+            )
+            result["errors"] += 1
+        elif response[1]["index"].get("result") == "created":
+            result["created"] += 1
+        elif response[1]["index"].get("result") == "updated":
+            result["updated"] += 1
+        else:
+            logger.error(
+                "Something unexpected happened during ingest. Bulk index response: %s",
+                json.dumps(response),
+            )
+            result["errors"] += 1
+        result["total"] += 1
+        if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
+            logger.info("Status update: %s records indexed so far!", result["total"])
+    logger.info("All records ingested, refreshing index.")
+    response = client.indices.refresh(
+        index=index, request_timeout=opensearch_request_timeout()
+    )
+    logger.debug(response)
+    return result

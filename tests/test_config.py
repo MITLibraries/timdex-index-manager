@@ -1,6 +1,17 @@
 import logging
 
-from tim.config import configure_logger, configure_sentry
+from tim.config import (
+    configure_index_settings,
+    configure_logger,
+    configure_sentry,
+    opensearch_request_timeout,
+)
+
+
+def test_configure_index_settings():
+    mappings, settings = configure_index_settings()
+    assert "timdex_record_id" in mappings["properties"]
+    assert "analysis" in settings
 
 
 def test_configure_logger_not_verbose():
@@ -33,3 +44,13 @@ def test_configure_sentry_env_variable_is_dsn(monkeypatch):
     monkeypatch.setenv("SENTRY_DSN", "https://1234567890@00000.ingest.sentry.io/123456")
     result = configure_sentry()
     assert result == "Sentry DSN found, exceptions will be sent to Sentry with env=test"
+
+
+def test_opensearch_request_timeout_default(monkeypatch):
+    monkeypatch.delenv("OPENSEARCH_REQUEST_TIMEOUT", raising=False)
+    assert opensearch_request_timeout() == 30
+
+
+def test_opensearch_request_timeout_from_env(monkeypatch):
+    monkeypatch.setenv("OPENSEARCH_REQUEST_TIMEOUT", "5")
+    assert opensearch_request_timeout() == 5

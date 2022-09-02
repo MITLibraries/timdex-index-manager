@@ -6,14 +6,17 @@ name = "pypi"
 [packages]
 boto3 = "*"
 click = "*"
+ijson = "*"
 opensearch-py = "*"
 sentry-sdk = "*"
+smart-open = {extras = ["s3"], version = "*"}
 
 [dev-packages]
 bandit = "*"
 black = "*"
 coverage = "*"
 coveralls = "*"
+freezegun = "*"
 mypy = "*"
 pylama = {extras = ["all"], version = "*"}
 pytest = "*"

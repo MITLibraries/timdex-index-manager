@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: null
+    headers:
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.0 (Python 3.10.6)
+    method: GET
+    uri: http://localhost:9200/_cat/indices?format=json
+  response:
+    body:
+      string: '[{"health":"yellow","status":"open","index":"test-2022-09-01t00-00-00","uuid":"P6AJIe88QBi_BheGeoxKOQ","pri":"1","rep":"1","docs.count":"0","docs.deleted":"0","store.size":"208b","pri.store.size":"208b"},{"health":"yellow","status":"open","index":"test-2022-10-01t00-00-00","uuid":"BOUV1ZI1QDml_GaHOJvvrA","pri":"1","rep":"1","docs.count":"0","docs.deleted":"0","store.size":"208b","pri.store.size":"208b"}]'
+    headers:
+      content-length:
+      - '407'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.0 (Python 3.10.6)
+    method: GET
+    uri: http://localhost:9200/_cat/aliases?format=json
+  response:
+    body:
+      string: '[{"alias":"all-current","index":"test-2022-09-01t00-00-00","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
+    headers:
+      content-length:
+      - '135'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.0 (Python 3.10.6)
+    method: GET
+    uri: http://localhost:9200/_cat/aliases?format=json
+  response:
+    body:
+      string: '[{"alias":"all-current","index":"test-2022-09-01t00-00-00","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
+    headers:
+      content-length:
+      - '135'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+version: 1

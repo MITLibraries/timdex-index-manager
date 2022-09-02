@@ -1,3 +1,5 @@
+from freezegun import freeze_time
+
 from tim.cli import main
 
 from .conftest import my_vcr
@@ -59,31 +61,48 @@ def test_ping(runner):
     assert "Name: docker-cluster" in result.stdout
 
 
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("ingest_no_options.yaml")
 def test_ingest_no_options(caplog, runner):
     result = runner.invoke(
         main,
-        ["ingest", "-s", "aspace", "tests/fixtures/sample-records.json"],
+        ["ingest", "-s", "test", "tests/fixtures/sample_records.json"],
     )
     assert result.exit_code == 0
-    assert "'ingest' command not yet implemented" in caplog.text
+    assert (
+        "Running ingest command with options: source=test, new=False, auto=False, "
+        "extra_aliases=(), filepath=tests/fixtures/sample_records.json" in caplog.text
+    )
+    assert "Ingesting records into existing index" in caplog.text
+    assert "Ingest complete!" in caplog.text
 
 
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("ingest_all_options.yaml")
 def test_ingest_all_options(caplog, runner):
     result = runner.invoke(
         main,
         [
             "ingest",
             "-s",
-            "dspace",
-            "-c",
-            "title",
+            "test",
             "--new",
             "--auto",
-            "tests/fixtures/sample-records.json",
+            "-a",
+            "test-alias",
+            "tests/fixtures/sample_records.json",
         ],
     )
     assert result.exit_code == 0
-    assert "'ingest' command not yet implemented" in caplog.text
+    assert (
+        "Running ingest command with options: source=test, new=True, auto=True, "
+        "extra_aliases=('test-alias',), filepath=tests/fixtures/sample_records.json"
+        in caplog.text
+    )
+    assert "Ingesting records into new index" in caplog.text
+    assert "Ingest complete!" in caplog.text
+    assert "'auto' flag was passed, automatic promotion is happening." in caplog.text
+    assert "Index promoted." in caplog.text
 
 
 @my_vcr.use_cassette("promote_index.yaml")

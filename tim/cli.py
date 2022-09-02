@@ -5,6 +5,7 @@ from typing import Optional
 
 import click
 
+from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import configure_logger, configure_sentry
 
@@ -96,15 +97,6 @@ def ping(ctx: click.Context) -> None:
     "create index according to the naming convention 'source-timestamp",
 )
 @click.option(
-    "-c",
-    "--consumer",
-    type=click.Choice(["os", "json", "title", "silent"]),
-    default="os",
-    show_default=True,
-    help="Consumer to use. Non-default optioins can be useful for development and "
-    "troubleshooting.",
-)
-@click.option(
     "--new",
     is_flag=True,
     help="Create a new index instead of ingesting into the current production index "
@@ -113,21 +105,67 @@ def ping(ctx: click.Context) -> None:
 @click.option(
     "--auto",
     is_flag=True,
-    help="Automatically promote index to the production alias on ingest copmletion. "
-    "Will demote the existing production index for the source if there is one.",
+    help="Automatically promote index on ingest completion. Will promote the index to "
+    "the primary alias (always), any existing indexes for the source (if any), and any "
+    "additional aliases passed via the --aliases option. Demotes existing index(es) "
+    "for the source in all aliases, if there are any.",
+)
+@click.option(
+    "-a",
+    "--aliases",
+    "extra_aliases",
+    multiple=True,
+    help="Additional aliases to promote the index to besisdes the primary alias. This "
+    "is only useful if the '--auto' flag is also passed. Note: the primary alias is "
+    "always assigned when an index is promoted and does not need to be passed "
+    "explicitly.",
 )
 @click.argument("filepath", type=click.Path())
-def ingest(
-    source: str, consumer: str, new: bool, auto: bool, filepath: str  # noqa
+@click.pass_context
+def ingest(  # pylint: disable=too-many-arguments
+    ctx: click.Context,
+    source: str,
+    new: bool,
+    auto: bool,
+    extra_aliases: Optional[list[str]],
+    filepath: str,
 ) -> None:
     """
     Bulk ingest records into an index.
 
-    By default, ingests into the current production index for the provided source."
+    By default, ingests into the current primary-aliased index for the provided source,
+    or creates a new one if there is no primary index for the source.
 
     FILEPATH: path to ingest file, use format "s3://bucketname/objectname" for s3.
     """
-    logger.info("'ingest' command not yet implemented")
+    logger.info(
+        "Running ingest command with options: source=%s, new=%s, auto=%s, "
+        "extra_aliases=%s, filepath=%s",
+        source,
+        new,
+        auto,
+        extra_aliases,
+        filepath,
+    )
+    client = ctx.obj["CLIENT"]
+    record_iterator = helpers.parse_records(filepath)
+    index = tim_os.get_or_create_index_from_source(client, source, new)
+    logger.info(
+        "Ingesting records into %s index '%s'", "new" if new else "existing", index
+    )
+    results = tim_os.bulk_index(client, index, record_iterator)
+    logger.info(
+        "Ingest complete!\n   Errors: %d%s"
+        "\n  Created: %d\n  Updated: %d\n    Total: %d",
+        results["errors"],
+        " (see logs for details)" if results["errors"] else "",
+        results["created"],
+        results["updated"],
+        results["total"],
+    )
+    if auto is True:
+        logger.info("'auto' flag was passed, automatic promotion is happening.")
+        ctx.invoke(promote, index=index, alias=extra_aliases)
 
 
 @main.command()
@@ -142,7 +180,7 @@ def ingest(
     "be repeated to promote the index to multiple aliases at once.",
 )
 @click.pass_context
-def promote(ctx: click.Context, index: str, alias: Optional[tuple[str]]) -> None:
+def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
     """
     Promote an index to the primary alias and add it to any additional provided aliases.
 
