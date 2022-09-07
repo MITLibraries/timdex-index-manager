@@ -4,6 +4,24 @@ from freezegun import freeze_time
 from tim import helpers
 
 
+def test_confirm_action_yes(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "Y")
+    assert helpers.confirm_action("test-index", "delete") is True
+
+
+def test_confirm_action_no(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    assert helpers.confirm_action("test-index", "delete") is False
+
+
+def test_confirm_action_invalid(capsys, monkeypatch):
+    inputs = iter(["wrong", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    assert helpers.confirm_action("test-index", "delete") is True
+    out, _ = capsys.readouterr()
+    assert out == "Invalid input: 'wrong', must be one of 'y' or 'n'.\n"
+
+
 @freeze_time("2022-09-01")
 def test_generate_index_name():
     assert helpers.generate_index_name("test") == "test-2022-09-01t00-00-00"

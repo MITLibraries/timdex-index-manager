@@ -120,7 +120,24 @@ def test_reindex(caplog, runner):
     assert "'reindex' command not yet implemented" in caplog.text
 
 
-def test_delete(caplog, runner):
+@my_vcr.use_cassette("delete_success.yaml")
+def test_delete_with_force(runner):
+    result = runner.invoke(main, ["delete", "-i", "test-index", "-f"])
+    assert result.exit_code == 0
+    assert "Index 'test-index' deleted." in result.stdout
+
+
+@my_vcr.use_cassette("delete_success.yaml")
+def test_delete_with_confirmation(monkeypatch, runner):
+    monkeypatch.setattr("builtins.input", lambda _: "y")
     result = runner.invoke(main, ["delete", "-i", "test-index"])
     assert result.exit_code == 0
-    assert "'delete' command not yet implemented" in caplog.text
+    assert "Index 'test-index' deleted." in result.stdout
+
+
+@my_vcr.use_cassette("delete_without_confirmation.yaml")
+def test_delete_without_confirmation(monkeypatch, runner):
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    result = runner.invoke(main, ["delete", "-i", "test-index"])
+    assert result.exit_code == 0
+    assert "Ok, index will not be deleted." in result.stdout

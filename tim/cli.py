@@ -1,4 +1,5 @@
 import logging
+import sys
 from datetime import timedelta
 from time import perf_counter
 from typing import Optional
@@ -231,6 +232,27 @@ def reindex(index: str, destination: str) -> None:  # noqa
     required=True,
     help="Name of the OpenSearch index to delete.",
 )
-def delete(index: str) -> None:  # noqa
-    """Delete an index."""
-    logger.info("'delete' command not yet implemented")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Pass to disable user confirmation prompt.",
+)
+@click.pass_context
+def delete(ctx: click.Context, index: str, force: bool) -> None:
+    """Delete an index.
+
+    Will prompt for confirmation before index deletion unless the --force option is
+    passed (not recommended when using on production OpenSearch instances).
+    """
+    client = ctx.obj["CLIENT"]
+    if force or helpers.confirm_action(
+        index, f"Are you sure you want to delete index '{index}'?"
+    ):
+        tim_os.delete_index(client, index)
+        click.echo(f"\nIndex '{index}' deleted.\n")
+        click.echo("Current state of all indexes:")
+        ctx.invoke(indexes)
+    else:
+        click.echo("\nOk, index will not be deleted.\n")
+        sys.exit()

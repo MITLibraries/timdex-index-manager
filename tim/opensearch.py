@@ -14,6 +14,7 @@ from tim.config import (
     configure_index_settings,
     opensearch_request_timeout,
 )
+from tim.errors import IndexNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,15 @@ def create_index(client: OpenSearch, name: str) -> str:
     response = client.indices.create(name, body=request_body)
     logger.debug(response)
     return response["index"]
+
+
+def delete_index(client: OpenSearch, index: str) -> None:
+    """Delete the provided index."""
+    try:
+        response = client.indices.delete(index)
+    except NotFoundError as error:
+        raise IndexNotFoundError(index=index) from error
+    logger.debug(response)
 
 
 def get_or_create_index_from_source(client: OpenSearch, source: str, new: bool) -> str:

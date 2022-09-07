@@ -7,6 +7,7 @@ from freezegun import freeze_time
 from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
+from tim.errors import IndexNotFoundError
 
 from .conftest import my_vcr
 
@@ -222,6 +223,20 @@ def test_get_all_aliased_indexes_for_source_multi_source_indexes_with_alias_logs
 @my_vcr.use_cassette("create_index.yaml")
 def test_create_index(test_opensearch_client):
     assert tim_os.create_index(test_opensearch_client, "test-index") == "test-index"
+
+
+@my_vcr.use_cassette("delete_index.yaml")
+def test_delete_index(test_opensearch_client):
+    assert "test-index" in tim_os.get_indexes(test_opensearch_client)
+    tim_os.delete_index(test_opensearch_client, "test-index")
+    assert tim_os.get_indexes(test_opensearch_client) is None
+
+
+@my_vcr.use_cassette("delete_index_not_present.yaml")
+def test_delete_index_not_present_raises_error(test_opensearch_client):
+    assert tim_os.get_indexes(test_opensearch_client) is None
+    with pytest.raises(IndexNotFoundError):
+        tim_os.delete_index(test_opensearch_client, "test-index")
 
 
 @my_vcr.use_cassette("get_or_create_index_from_source_primary_index_exists.yaml")
