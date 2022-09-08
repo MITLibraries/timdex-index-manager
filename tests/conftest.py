@@ -1,9 +1,15 @@
 import os
 
 import pytest
+import vcr
 from click.testing import CliRunner
 
 from tim.opensearch import configure_opensearch_client
+
+my_vcr = vcr.VCR(
+    cassette_library_dir="tests/fixtures/cassettes",
+    filter_headers=["authorization"],
+)
 
 
 @pytest.fixture(autouse=True)

@@ -1,9 +1,16 @@
+import json
 import logging
 import os
 
 import sentry_sdk
 
 PRIMARY_ALIAS = "all-current"
+
+
+def configure_index_settings() -> tuple:
+    with open("config/opensearch_mappings.json", "r", encoding="utf-8") as file:
+        all_settings = json.load(file)
+        return all_settings["mappings"], all_settings["settings"]
 
 
 def configure_logger(logger: logging.Logger, verbose: bool) -> str:
@@ -33,3 +40,7 @@ def configure_sentry() -> str:
         sentry_sdk.init(sentry_dsn, environment=env)
         return f"Sentry DSN found, exceptions will be sent to Sentry with env={env}"
     return "No Sentry DSN found, exceptions will not be sent to Sentry"
+
+
+def opensearch_request_timeout() -> int:
+    return int(os.getenv("OPENSEARCH_REQUEST_TIMEOUT", "30"))
