@@ -9,7 +9,7 @@ VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
 
 def confirm_action(index: str, input_prompt: str) -> bool:
     """Get user confirmation via the provided input prompt."""
-    check = input(f"{input_prompt} [y/n]")
+    check = input(f"{input_prompt} [y/n]: ")
     if check.lower() == "y":
         return True
     if check.lower() == "n":

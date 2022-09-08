@@ -114,6 +114,7 @@ def test_get_indexes(test_opensearch_client):
 @my_vcr.use_cassette("get_indexes.yaml")
 def test_get_formatted_indexes(test_opensearch_client):
     assert tim_os.get_formatted_indexes(test_opensearch_client) == (
+        "Current state of all indexes:\n"
         "\nName: index-with-multiple-aliases"
         "\n  Aliases: alias-with-multiple-indexes, alias-with-one-index"
         "\n  Status: open"
@@ -147,7 +148,7 @@ def test_get_formatted_indexes(test_opensearch_client):
 @my_vcr.use_cassette("get_indexes_none_present.yaml")
 def test_get_formatted_indexes_no_indexes_present(test_opensearch_client):
     assert tim_os.get_formatted_indexes(test_opensearch_client) == (
-        "\nNo indexes present in OpenSearch cluster.\n"
+        "Current state of all indexes: No indexes present in OpenSearch cluster."
     )
 
 
@@ -246,12 +247,9 @@ def test_get_or_create_index_from_source_index_exists(test_opensearch_client):
         "test-2022-09-01t00-00-00"
         in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
     )
-    assert (
-        tim_os.get_or_create_index_from_source(
-            test_opensearch_client, "test", new=False
-        )
-        == "test-2022-09-01t00-00-00"
-    )
+    assert tim_os.get_or_create_index_from_source(
+        test_opensearch_client, "test", new=False
+    ) == ("test-2022-09-01t00-00-00", False)
 
 
 @freeze_time("2022-09-01")
@@ -262,12 +260,9 @@ def test_get_or_create_index_from_source_no_primary_source_index_present(
     test_opensearch_client,
 ):
     assert tim_os.get_indexes(test_opensearch_client) is None
-    assert (
-        tim_os.get_or_create_index_from_source(
-            test_opensearch_client, "test", new=False
-        )
-        == "test-2022-09-01t00-00-00"
-    )
+    assert tim_os.get_or_create_index_from_source(
+        test_opensearch_client, "test", new=False
+    ) == ("test-2022-09-01t00-00-00", True)
 
 
 @freeze_time("2022-10-01")
@@ -278,10 +273,9 @@ def test_get_or_create_index_from_source_new_passed(test_opensearch_client):
         "test-2022-09-01t00-00-00"
         in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
     )
-    assert (
-        tim_os.get_or_create_index_from_source(test_opensearch_client, "test", new=True)
-        == "test-2022-10-01t00-00-00"
-    )
+    assert tim_os.get_or_create_index_from_source(
+        test_opensearch_client, "test", new=True
+    ) == ("test-2022-10-01t00-00-00", True)
 
 
 @my_vcr.use_cassette("get_index_aliases_none_present.yaml")

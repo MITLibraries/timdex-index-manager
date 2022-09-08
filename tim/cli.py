@@ -1,5 +1,4 @@
 import logging
-import sys
 from datetime import timedelta
 from time import perf_counter
 from typing import Optional
@@ -150,9 +149,9 @@ def ingest(  # pylint: disable=too-many-arguments
     )
     client = ctx.obj["CLIENT"]
     record_iterator = helpers.parse_records(filepath)
-    index = tim_os.get_or_create_index_from_source(client, source, new)
+    index, is_new = tim_os.get_or_create_index_from_source(client, source, new)
     logger.info(
-        "Ingesting records into %s index '%s'", "new" if new else "existing", index
+        "Ingesting records into %s index '%s'", "new" if is_new else "existing", index
     )
     results = tim_os.bulk_index(client, index, record_iterator)
     logger.info(
@@ -250,9 +249,8 @@ def delete(ctx: click.Context, index: str, force: bool) -> None:
         index, f"Are you sure you want to delete index '{index}'?"
     ):
         tim_os.delete_index(client, index)
-        click.echo(f"\nIndex '{index}' deleted.\n")
-        click.echo("Current state of all indexes:")
+        click.echo(f"Index '{index}' deleted.")
         ctx.invoke(indexes)
     else:
-        click.echo("\nOk, index will not be deleted.\n")
-        sys.exit()
+        click.echo("Ok, index will not be deleted.")
+        click.Abort()
