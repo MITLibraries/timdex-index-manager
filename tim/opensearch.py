@@ -14,6 +14,7 @@ from tim.config import (
     configure_index_settings,
     opensearch_request_timeout,
 )
+from tim.errors import IndexNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -93,8 +94,9 @@ def get_indexes(client: OpenSearch) -> Optional[dict[str, dict]]:
 
 def get_formatted_indexes(client: OpenSearch) -> str:
     """Return all indexes with their summary information, formatted for display."""
+    output = "Current state of all indexes:"
     if indexes := get_indexes(client):
-        output = ""
+        output += "\n"
         for index, info in sorted(indexes.items()):
             index_aliases = get_index_aliases(client, index)
             output += (
@@ -108,7 +110,7 @@ def get_formatted_indexes(client: OpenSearch) -> str:
                 f"  UUID: {info['uuid']}\n"
             )
         return output
-    return "\nNo indexes present in OpenSearch cluster.\n"
+    return output + " No indexes present in OpenSearch cluster."
 
 
 def get_all_aliased_indexes_for_source(
@@ -158,7 +160,18 @@ def create_index(client: OpenSearch, name: str) -> str:
     return response["index"]
 
 
-def get_or_create_index_from_source(client: OpenSearch, source: str, new: bool) -> str:
+def delete_index(client: OpenSearch, index: str) -> None:
+    """Delete the provided index."""
+    try:
+        response = client.indices.delete(index)
+    except NotFoundError as error:
+        raise IndexNotFoundError(index=index) from error
+    logger.debug(response)
+
+
+def get_or_create_index_from_source(
+    client: OpenSearch, source: str, new: bool
+) -> tuple[str, bool]:
     """Get the primary index for the provided source or create a new index.
 
     If new is True, always creates a new index. Otherwise, gets and returns the primary
@@ -170,13 +183,13 @@ def get_or_create_index_from_source(client: OpenSearch, source: str, new: bool) 
     if new is False:
         if index := get_primary_index_for_source(client, source):
             logger.debug("Primary index found for source '%s': %s", source, index)
-            return index
+            return index, False
         logger.debug(
             "No current primary index found for source '%s', creating a new index.",
             source,
         )
     new_index_name = helpers.generate_index_name(source)
-    return create_index(client, new_index_name)
+    return create_index(client, new_index_name), True
 
 
 def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:

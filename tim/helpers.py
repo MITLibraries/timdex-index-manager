@@ -7,6 +7,17 @@ import smart_open
 VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
 
 
+def confirm_action(index: str, input_prompt: str) -> bool:
+    """Get user confirmation via the provided input prompt."""
+    check = input(f"{input_prompt} [y/n]: ")
+    if check.lower() == "y":
+        return True
+    if check.lower() == "n":
+        return False
+    print(f"Invalid input: '{check}', must be one of 'y' or 'n'.")
+    return confirm_action(index, input_prompt)
+
+
 def generate_index_name(source: str) -> str:
     """Generate a new index name from a source short name.
 

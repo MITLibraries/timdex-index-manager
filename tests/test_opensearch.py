@@ -7,6 +7,7 @@ from freezegun import freeze_time
 from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
+from tim.errors import IndexNotFoundError
 
 from .conftest import my_vcr
 
@@ -113,6 +114,7 @@ def test_get_indexes(test_opensearch_client):
 @my_vcr.use_cassette("get_indexes.yaml")
 def test_get_formatted_indexes(test_opensearch_client):
     assert tim_os.get_formatted_indexes(test_opensearch_client) == (
+        "Current state of all indexes:\n"
         "\nName: index-with-multiple-aliases"
         "\n  Aliases: alias-with-multiple-indexes, alias-with-one-index"
         "\n  Status: open"
@@ -146,7 +148,7 @@ def test_get_formatted_indexes(test_opensearch_client):
 @my_vcr.use_cassette("get_indexes_none_present.yaml")
 def test_get_formatted_indexes_no_indexes_present(test_opensearch_client):
     assert tim_os.get_formatted_indexes(test_opensearch_client) == (
-        "\nNo indexes present in OpenSearch cluster.\n"
+        "Current state of all indexes: No indexes present in OpenSearch cluster."
     )
 
 
@@ -224,6 +226,20 @@ def test_create_index(test_opensearch_client):
     assert tim_os.create_index(test_opensearch_client, "test-index") == "test-index"
 
 
+@my_vcr.use_cassette("delete_index.yaml")
+def test_delete_index(test_opensearch_client):
+    assert "test-index" in tim_os.get_indexes(test_opensearch_client)
+    tim_os.delete_index(test_opensearch_client, "test-index")
+    assert tim_os.get_indexes(test_opensearch_client) is None
+
+
+@my_vcr.use_cassette("delete_index_not_present.yaml")
+def test_delete_index_not_present_raises_error(test_opensearch_client):
+    assert tim_os.get_indexes(test_opensearch_client) is None
+    with pytest.raises(IndexNotFoundError):
+        tim_os.delete_index(test_opensearch_client, "test-index")
+
+
 @my_vcr.use_cassette("get_or_create_index_from_source_primary_index_exists.yaml")
 def test_get_or_create_index_from_source_index_exists(test_opensearch_client):
     aliases = tim_os.get_aliases(test_opensearch_client)
@@ -231,12 +247,9 @@ def test_get_or_create_index_from_source_index_exists(test_opensearch_client):
         "test-2022-09-01t00-00-00"
         in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
     )
-    assert (
-        tim_os.get_or_create_index_from_source(
-            test_opensearch_client, "test", new=False
-        )
-        == "test-2022-09-01t00-00-00"
-    )
+    assert tim_os.get_or_create_index_from_source(
+        test_opensearch_client, "test", new=False
+    ) == ("test-2022-09-01t00-00-00", False)
 
 
 @freeze_time("2022-09-01")
@@ -247,12 +260,9 @@ def test_get_or_create_index_from_source_no_primary_source_index_present(
     test_opensearch_client,
 ):
     assert tim_os.get_indexes(test_opensearch_client) is None
-    assert (
-        tim_os.get_or_create_index_from_source(
-            test_opensearch_client, "test", new=False
-        )
-        == "test-2022-09-01t00-00-00"
-    )
+    assert tim_os.get_or_create_index_from_source(
+        test_opensearch_client, "test", new=False
+    ) == ("test-2022-09-01t00-00-00", True)
 
 
 @freeze_time("2022-10-01")
@@ -263,10 +273,9 @@ def test_get_or_create_index_from_source_new_passed(test_opensearch_client):
         "test-2022-09-01t00-00-00"
         in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
     )
-    assert (
-        tim_os.get_or_create_index_from_source(test_opensearch_client, "test", new=True)
-        == "test-2022-10-01t00-00-00"
-    )
+    assert tim_os.get_or_create_index_from_source(
+        test_opensearch_client, "test", new=True
+    ) == ("test-2022-10-01t00-00-00", True)
 
 
 @my_vcr.use_cassette("get_index_aliases_none_present.yaml")
