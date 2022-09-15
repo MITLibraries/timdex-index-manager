@@ -139,5 +139,38 @@ def test_delete_with_confirmation(monkeypatch, runner):
 def test_delete_without_confirmation(monkeypatch, runner):
     monkeypatch.setattr("builtins.input", lambda _: "n")
     result = runner.invoke(main, ["delete", "-i", "test-index"])
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert "Ok, index will not be deleted." in result.stdout
+
+
+@my_vcr.use_cassette("demote_no_aliases_for_index.yaml")
+def test_demote_no_aliases_for_index(runner):
+    result = runner.invoke(main, ["demote", "-i", "test-index"])
+    assert result.exit_code == 1
+    assert (
+        "Index 'test-index' has no aliases, please check aliases and try again."
+        in result.stdout
+    )
+
+
+@my_vcr.use_cassette("demote_from_primary_alias_with_confirmation.yaml")
+def test_demote_from_primary_alias_with_confirmation(monkeypatch, runner):
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+    result = runner.invoke(main, ["demote", "-i", "test-index"])
+    assert result.exit_code == 0
+    assert "Index 'test-index' demoted from aliases: ['all-current']" in result.stdout
+
+
+@my_vcr.use_cassette("demote_from_primary_alias_without_confirmation.yaml")
+def test_demote_from_primary_alias_without_confirmation(monkeypatch, runner):
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    result = runner.invoke(main, ["demote", "-i", "test-index"])
+    assert result.exit_code == 1
+    assert "Ok, index will not be demoted." in result.stdout
+
+
+@my_vcr.use_cassette("demote_no_primary_alias.yaml")
+def test_demote_no_primary_alias(runner):
+    result = runner.invoke(main, ["demote", "-i", "test-index"])
+    assert result.exit_code == 0
+    assert "Index 'test-index' demoted from aliases: ['not-primary']" in result.stdout

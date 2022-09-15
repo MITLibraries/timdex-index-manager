@@ -3,11 +3,12 @@ from unittest import mock
 
 import pytest
 from freezegun import freeze_time
+from opensearchpy.exceptions import NotFoundError
 
 from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
-from tim.errors import IndexNotFoundError
+from tim.errors import AliasNotFoundError, IndexNotFoundError
 
 from .conftest import my_vcr
 
@@ -58,6 +59,7 @@ def test_get_aliases_no_aliases_present(test_opensearch_client):
 @my_vcr.use_cassette("get_aliases.yaml")
 def test_get_formatted_aliases(test_opensearch_client):
     assert tim_os.get_formatted_aliases(test_opensearch_client) == (
+        "Current state of all aliases:"
         "\nAlias: alias-with-multiple-indexes"
         "\n  Indexes: index-with-multiple-aliases, index-with-one-alias\n"
         "\nAlias: alias-with-one-index"
@@ -68,7 +70,7 @@ def test_get_formatted_aliases(test_opensearch_client):
 @my_vcr.use_cassette("get_aliases_none_present.yaml")
 def test_get_formatted_aliases_no_aliases_present(test_opensearch_client):
     assert tim_os.get_formatted_aliases(test_opensearch_client) == (
-        "\nNo aliases present in OpenSearch cluster.\n"
+        "Current state of all aliases:\nNo aliases present in OpenSearch cluster.\n"
     )
 
 
@@ -278,6 +280,13 @@ def test_get_or_create_index_from_source_new_passed(test_opensearch_client):
     ) == ("test-2022-10-01t00-00-00", True)
 
 
+@my_vcr.use_cassette("get_index_aliases_index_not_present.yaml")
+def test_get_index_aliases_index_not_present(test_opensearch_client):
+    assert tim_os.get_indexes(test_opensearch_client) is None
+    with pytest.raises(IndexNotFoundError):
+        tim_os.get_index_aliases(test_opensearch_client, "not-here")
+
+
 @my_vcr.use_cassette("get_index_aliases_none_present.yaml")
 def test_get_index_aliases_no_aliases_set(test_opensearch_client):
     assert tim_os.get_index_aliases(test_opensearch_client, "test-index") is None
@@ -376,9 +385,46 @@ def test_promote_index_promotes_to_extra_aliases_and_creates_if_not_present(
 @my_vcr.use_cassette("promote_index_not_present.yaml")
 def test_promote_index_not_present_raises_error(test_opensearch_client):
     assert tim_os.get_indexes(test_opensearch_client) is None
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(IndexNotFoundError):
         tim_os.promote_index(test_opensearch_client, "not-an-index")
-    assert "Index 'not-an-index' not present in Cluster." in str(error.value)
+
+
+@my_vcr.use_cassette("promote_index_unexpected_error.yaml")
+def test_promote_index_unexpected_error_reraises(test_opensearch_client):
+    with pytest.raises(NotFoundError):
+        tim_os.promote_index(test_opensearch_client, "test-index")
+
+
+@my_vcr.use_cassette("remove_alias_success.yaml")
+def test_remove_alias_success(test_opensearch_client):
+    assert tim_os.get_index_aliases(test_opensearch_client, "test-index") == [
+        "all-current",
+        "another-alias",
+    ]
+    tim_os.remove_alias(test_opensearch_client, "test-index", "all-current")
+    assert tim_os.get_index_aliases(test_opensearch_client, "test-index") == [
+        "another-alias"
+    ]
+
+
+@my_vcr.use_cassette("remove_alias_index_not_present.yaml")
+def test_remove_alias_index_not_present_raises_error(test_opensearch_client):
+    assert tim_os.get_indexes(test_opensearch_client) is None
+    with pytest.raises(IndexNotFoundError):
+        tim_os.remove_alias(test_opensearch_client, "test-index", "an-alias")
+
+
+@my_vcr.use_cassette("remove_alias_not_associated_with_index.yaml")
+def test_remove_alias_not_associated_with_index_raises_error(test_opensearch_client):
+    assert tim_os.get_index_aliases(test_opensearch_client, "test-index") is None
+    with pytest.raises(AliasNotFoundError):
+        tim_os.remove_alias(test_opensearch_client, "test-index", "an-alias")
+
+
+@my_vcr.use_cassette("remove_alias_unexpected_error.yaml")
+def test_remove_alias_unexpected_error_reraises(test_opensearch_client):
+    with pytest.raises(NotFoundError):
+        tim_os.remove_alias(test_opensearch_client, "test-index", "an-alias")
 
 
 # Record functions
