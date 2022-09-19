@@ -1,0 +1,46 @@
+interactions:
+- request:
+    body: null
+    headers:
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.0 (Python 3.10.6)
+    method: GET
+    uri: http://localhost:9200/test-index/_alias
+  response:
+    body:
+      string: '{"test-index":{"aliases":{}}}'
+    headers:
+      content-length:
+      - '29'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Content-Length:
+      - '0'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.0 (Python 3.10.6)
+    method: DELETE
+    uri: http://localhost:9200/test-index/_alias/an-alias
+  response:
+    body:
+      string: '{"error":{"root_cause":[{"type":"aliases_not_found_exception","reason":"aliases
+        [an-alias] missing","resource.id":"an-alias","resource.type":"aliases"}],"type":"aliases_not_found_exception","reason":"aliases
+        [an-alias] missing","resource.id":"an-alias","resource.type":"aliases"},"status":404}'
+    headers:
+      content-length:
+      - '293'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 404
+      message: Not Found
+version: 1

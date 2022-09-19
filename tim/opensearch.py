@@ -14,7 +14,7 @@ from tim.config import (
     configure_index_settings,
     opensearch_request_timeout,
 )
-from tim.errors import IndexNotFoundError
+from tim.errors import AliasNotFoundError, IndexNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -72,13 +72,14 @@ def get_aliases(client: OpenSearch) -> Optional[dict[str, list[str]]]:
 
 def get_formatted_aliases(client: OpenSearch) -> str:
     """Return all aliases with their associated indexes, formatted for display."""
+    output = "Current state of all aliases:"
     if aliases := get_aliases(client):
-        output = ""
         for alias, indexes in sorted(aliases.items()):
             output += f"\nAlias: {alias}"
             output += f"\n  Indexes: {', '.join(sorted(indexes))}\n"
-        return output
-    return "\nNo aliases present in OpenSearch cluster.\n"
+    else:
+        output += "\nNo aliases present in OpenSearch cluster.\n"
+    return output
 
 
 def get_indexes(client: OpenSearch) -> Optional[dict[str, dict]]:
@@ -197,7 +198,10 @@ def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:
 
     Returns None if the index has no aliases.
     """
-    response = client.indices.get_alias(index=index)
+    try:
+        response = client.indices.get_alias(index=index)
+    except NotFoundError as error:
+        raise IndexNotFoundError(index) from error
     logger.debug(response)
     aliases = response[index].get("aliases")
     return sorted(aliases.keys()) or None
@@ -256,7 +260,31 @@ def promote_index(
         response = client.indices.update_aliases(body=request_body)
         logger.debug(response)
     except NotFoundError as error:
-        raise ValueError(f"Index '{index}' not present in Cluster.") from error
+        if (
+            isinstance(error.info, dict)
+            and error.info.get("error", []).get("type") == "index_not_found_exception"
+        ):
+            raise IndexNotFoundError(index=index) from error
+        raise error
+
+
+def remove_alias(client: OpenSearch, index: str, alias: str) -> None:
+    """Remove the provided alias from the provided index."""
+    try:
+        response = client.indices.delete_alias(index, alias)
+        logger.debug(response)
+    except NotFoundError as error:
+        if (
+            isinstance(error.info, dict)
+            and error.info.get("error", []).get("type") == "index_not_found_exception"
+        ):
+            raise IndexNotFoundError(index=index) from error
+        if (
+            isinstance(error.info, dict)
+            and error.info.get("error", []).get("type") == "aliases_not_found_exception"
+        ):
+            raise AliasNotFoundError(alias=alias, index=index) from error
+        raise error
 
 
 # Record functions

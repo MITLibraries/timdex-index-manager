@@ -7,7 +7,7 @@ import click
 
 from tim import helpers
 from tim import opensearch as tim_os
-from tim.config import configure_logger, configure_sentry
+from tim.config import PRIMARY_ALIAS, configure_logger, configure_sentry
 
 logger = logging.getLogger(__name__)
 
@@ -253,4 +253,40 @@ def delete(ctx: click.Context, index: str, force: bool) -> None:
         ctx.invoke(indexes)
     else:
         click.echo("Ok, index will not be deleted.")
-        click.Abort()
+        raise click.Abort()
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    required=True,
+    help="Name of the OpenSearch index to demote.",
+)
+@click.pass_context
+def demote(ctx: click.Context, index: str) -> None:
+    """Demote an index from all its associated aliases.
+
+    Will prompt for confirmation before index demotion if the index is associated with
+    the primary alias, as it's very rare that we would want to demote an index from the
+    primary alias without simultaneously promoting a different index for the source.
+    """
+    client = ctx.obj["CLIENT"]
+    index_aliases = tim_os.get_index_aliases(client, index) or []
+    if not index_aliases:
+        click.echo(
+            f"Index '{index}' has no aliases, please check aliases and try again."
+        )
+        raise click.Abort()
+    if PRIMARY_ALIAS in index_aliases:
+        if not helpers.confirm_action(
+            index,
+            f"Are you sure you want to demote index '{index}' from the primary alias "
+            "without promoting another index for the source?",
+        ):
+            click.echo("Ok, index will not be demoted.")
+            raise click.Abort()
+    for alias in index_aliases:
+        tim_os.remove_alias(client, index, alias)
+    click.echo(f"Index '{index}' demoted from aliases: {index_aliases}")
+    ctx.invoke(aliases)
