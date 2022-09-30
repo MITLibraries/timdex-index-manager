@@ -3,7 +3,7 @@ from datetime import timedelta
 from time import perf_counter
 from typing import Optional
 
-import click
+import rich_click as click
 
 from tim import helpers
 from tim import opensearch as tim_os
@@ -11,11 +11,28 @@ from tim.config import PRIMARY_ALIAS, configure_logger, configure_sentry
 
 logger = logging.getLogger(__name__)
 
+click.rich_click.COMMAND_GROUPS = {
+    "tim": [
+        {
+            "name": "Get cluster-level information",
+            "commands": ["ping", "indexes", "aliases"],
+        },
+        {
+            "name": "Index management commands",
+            "commands": ["create", "delete", "promote", "demote"],
+        },
+        {
+            "name": "Bulk record processing commands",
+            "commands": ["ingest"],
+        },
+    ]
+}
+
 
 # Main command group
 
 
-@click.group()
+@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option(
     "-u",
     "--url",
@@ -31,6 +48,11 @@ logger = logging.getLogger(__name__)
 )
 @click.pass_context
 def main(ctx: click.Context, url: str, verbose: bool) -> None:
+    """
+    TIM provides commands for interacting with OpenSearch indexes.
+
+    For more details on a specific command, run tim COMMAND -h.
+    """
     ctx.ensure_object(dict)
     ctx.obj["START_TIME"] = perf_counter()
     root_logger = logging.getLogger()
@@ -86,6 +108,113 @@ def ping(ctx: click.Context) -> None:
 
 
 # Index commands
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    required=True,
+    help="Name of the OpenSearch index to delete.",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Pass to disable user confirmation prompt.",
+)
+@click.pass_context
+def delete(ctx: click.Context, index: str, force: bool) -> None:
+    """Delete an index.
+
+    Will prompt for confirmation before index deletion unless the --force option is
+    passed (not recommended when using on production OpenSearch instances).
+    """
+    client = ctx.obj["CLIENT"]
+    if force or helpers.confirm_action(
+        index, f"Are you sure you want to delete index '{index}'?"
+    ):
+        tim_os.delete_index(client, index)
+        click.echo(f"Index '{index}' deleted.")
+        ctx.invoke(indexes)
+    else:
+        click.echo("Ok, index will not be deleted.")
+        raise click.Abort()
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    required=True,
+    help="Name of the OpenSearch index to demote.",
+)
+@click.pass_context
+def demote(ctx: click.Context, index: str) -> None:
+    """Demote an index from all its associated aliases.
+
+    Will prompt for confirmation before index demotion if the index is associated with
+    the primary alias, as it's very rare that we would want to demote an index from the
+    primary alias without simultaneously promoting a different index for the source.
+    """
+    client = ctx.obj["CLIENT"]
+    index_aliases = tim_os.get_index_aliases(client, index) or []
+    if not index_aliases:
+        click.echo(
+            f"Index '{index}' has no aliases, please check aliases and try again."
+        )
+        raise click.Abort()
+    if PRIMARY_ALIAS in index_aliases:
+        if not helpers.confirm_action(
+            index,
+            f"Are you sure you want to demote index '{index}' from the primary alias "
+            "without promoting another index for the source?",
+        ):
+            click.echo("Ok, index will not be demoted.")
+            raise click.Abort()
+    for alias in index_aliases:
+        tim_os.remove_alias(client, index, alias)
+    click.echo(f"Index '{index}' demoted from aliases: {index_aliases}")
+    ctx.invoke(aliases)
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    required=True,
+    help="Name of the OpenSearch index to promote.",
+)
+@click.option(
+    "-a",
+    "--alias",
+    multiple=True,
+    help="Alias to promote the index to in addition to the primary alias. May "
+    "be repeated to promote the index to multiple aliases at once.",
+)
+@click.pass_context
+def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
+    """
+    Promote an index to the primary alias and add it to any additional provided aliases.
+
+    This command promotes an index to the primary alias, any alias that already has an
+    index for the same source, and any additional alias(es) passed to the command. If
+    there is already an index for the source in any alias it is promoted to, the
+    existing index will be demoted.
+
+    This action is atomic.
+    """
+    client = ctx.obj["CLIENT"]
+    tim_os.promote_index(client, index, extra_aliases=alias)
+    logger.info(
+        "Index promoted. Current aliases for index '%s': %s",
+        index,
+        tim_os.get_index_aliases(client, index),
+    )
+    ctx.invoke(aliases)
+
+
+# Bulk record processing commands
 
 
 @main.command()
@@ -166,127 +295,3 @@ def ingest(  # pylint: disable=too-many-arguments
     if auto is True:
         logger.info("'auto' flag was passed, automatic promotion is happening.")
         ctx.invoke(promote, index=index, alias=extra_aliases)
-
-
-@main.command()
-@click.option(
-    "-i", "--index", required=True, help="Name of the OpenSearch index to promote."
-)
-@click.option(
-    "-a",
-    "--alias",
-    multiple=True,
-    help="Alias to promote the index to in addition to the primary alias. May "
-    "be repeated to promote the index to multiple aliases at once.",
-)
-@click.pass_context
-def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
-    """
-    Promote an index to the primary alias and add it to any additional provided aliases.
-
-    This command promotes an index to the primary alias, any alias that already has an
-    index for the same source, and any additional alias(es) passed to the command. If
-    there is already an index for the source in any alias it is promoted to, the
-    existing index will be demoted.
-
-    This action is atomic.
-    """
-    client = ctx.obj["CLIENT"]
-    tim_os.promote_index(client, index, extra_aliases=alias)
-    logger.info(
-        "Index promoted. Current aliases for index '%s': %s",
-        index,
-        tim_os.get_index_aliases(client, index),
-    )
-    click.echo("Current state of all aliases:")
-    ctx.invoke(aliases)
-
-
-@main.command()
-@click.option(
-    "-i",
-    "--index",
-    required=True,
-    help="Name of the OpenSearch index to copy.",
-)
-@click.option(
-    "-d",
-    "--destination",
-    required=True,
-    help="Name of the destination index.",
-)
-def reindex(index: str, destination: str) -> None:  # noqa
-    """
-    Reindex one index to another index.
-
-    Copy one index to another. The doc source must be present in the original index.
-    """
-    logger.info("'reindex' command not yet implemented")
-
-
-@main.command()
-@click.option(
-    "-i",
-    "--index",
-    required=True,
-    help="Name of the OpenSearch index to delete.",
-)
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    help="Pass to disable user confirmation prompt.",
-)
-@click.pass_context
-def delete(ctx: click.Context, index: str, force: bool) -> None:
-    """Delete an index.
-
-    Will prompt for confirmation before index deletion unless the --force option is
-    passed (not recommended when using on production OpenSearch instances).
-    """
-    client = ctx.obj["CLIENT"]
-    if force or helpers.confirm_action(
-        index, f"Are you sure you want to delete index '{index}'?"
-    ):
-        tim_os.delete_index(client, index)
-        click.echo(f"Index '{index}' deleted.")
-        ctx.invoke(indexes)
-    else:
-        click.echo("Ok, index will not be deleted.")
-        raise click.Abort()
-
-
-@main.command()
-@click.option(
-    "-i",
-    "--index",
-    required=True,
-    help="Name of the OpenSearch index to demote.",
-)
-@click.pass_context
-def demote(ctx: click.Context, index: str) -> None:
-    """Demote an index from all its associated aliases.
-
-    Will prompt for confirmation before index demotion if the index is associated with
-    the primary alias, as it's very rare that we would want to demote an index from the
-    primary alias without simultaneously promoting a different index for the source.
-    """
-    client = ctx.obj["CLIENT"]
-    index_aliases = tim_os.get_index_aliases(client, index) or []
-    if not index_aliases:
-        click.echo(
-            f"Index '{index}' has no aliases, please check aliases and try again."
-        )
-        raise click.Abort()
-    if PRIMARY_ALIAS in index_aliases:
-        if not helpers.confirm_action(
-            index,
-            f"Are you sure you want to demote index '{index}' from the primary alias "
-            "without promoting another index for the source?",
-        ):
-            click.echo("Ok, index will not be demoted.")
-            raise click.Abort()
-    for alias in index_aliases:
-        tim_os.remove_alias(client, index, alias)
-    click.echo(f"Index '{index}' demoted from aliases: {index_aliases}")
-    ctx.invoke(aliases)

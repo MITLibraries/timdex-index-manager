@@ -8,6 +8,7 @@ boto3 = "*"
 click = "*"
 ijson = "*"
 opensearch-py = "*"
+rich-click = "*"
 sentry-sdk = "*"
 smart-open = {extras = ["s3"], version = "*"}
 
@@ -26,4 +27,4 @@ vcrpy = "*"
 python_version = "3.10"
 
 [scripts]
-tim = "python -c \"from tim.cli import main; main()\""
+tim = "python -c \"from tim.cli import main; main(prog_name='tim')\""
