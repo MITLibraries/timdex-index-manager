@@ -444,7 +444,7 @@ def test_remove_alias_unexpected_error_reraises(test_opensearch_client):
 # Record functions
 
 
-@my_vcr.use_cassette("bulk_index_create_records.yaml")
+@my_vcr.use_cassette("opensearch/bulk_index_create_records.yaml")
 def test_bulk_index_creates_records(test_opensearch_client):
     records = helpers.parse_records("tests/fixtures/sample_records.json")
     assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
@@ -455,7 +455,7 @@ def test_bulk_index_creates_records(test_opensearch_client):
     }
 
 
-@my_vcr.use_cassette("bulk_index_update_records.yaml")
+@my_vcr.use_cassette("opensearch/bulk_index_update_records.yaml")
 def test_bulk_index_updates_records(caplog, monkeypatch, test_opensearch_client):
     monkeypatch.setenv("STATUS_UPDATE_INTERVAL", "5")
     records = helpers.parse_records("tests/fixtures/sample_records.json")
@@ -468,7 +468,7 @@ def test_bulk_index_updates_records(caplog, monkeypatch, test_opensearch_client)
     assert "Status update: 5 records indexed so far!" in caplog.text
 
 
-@my_vcr.use_cassette("bulk_index_record_with_errors.yaml")
+@my_vcr.use_cassette("opensearch/bulk_index_record_with_errors.yaml")
 def test_bulk_index_logs_errors(caplog, test_opensearch_client):
     records = helpers.parse_records("tests/fixtures/sample_record_with_errors.json")
     assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {

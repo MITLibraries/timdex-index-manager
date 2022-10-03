@@ -23,7 +23,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Bulk record processing commands",
-            "commands": ["ingest"],
+            "commands": ["bulk-index"],
         },
     ]
 }
@@ -261,80 +261,55 @@ def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
 
 
 @main.command()
+@click.option("-i", "--index", help="Name of the index to bulk index records into.")
 @click.option(
     "-s",
     "--source",
-    required=True,
-    help="Short name for source of records, e.g. 'dspace'. Will be used to identify or "
-    "create index according to the naming convention 'source-timestamp",
-)
-@click.option(
-    "--new",
-    is_flag=True,
-    help="Create a new index instead of ingesting into the current production index "
-    "for the source",
-)
-@click.option(
-    "--auto",
-    is_flag=True,
-    help="Automatically promote index on ingest completion. Will promote the index to "
-    "the primary alias (always), any existing indexes for the source (if any), and any "
-    "additional aliases passed via the --aliases option. Demotes existing index(es) "
-    "for the source in all aliases, if there are any.",
-)
-@click.option(
-    "-a",
-    "--aliases",
-    "extra_aliases",
-    multiple=True,
-    help="Additional aliases to promote the index to besisdes the primary alias. This "
-    "is only useful if the '--auto' flag is also passed. Note: the primary alias is "
-    "always assigned when an index is promoted and does not need to be passed "
-    "explicitly.",
+    type=click.Choice(VALID_SOURCES),
+    help="Source whose primary-aliased index to bulk index records into.",
 )
 @click.argument("filepath", type=click.Path())
 @click.pass_context
-def ingest(  # pylint: disable=too-many-arguments
-    ctx: click.Context,
-    source: str,
-    new: bool,
-    auto: bool,
-    extra_aliases: Optional[list[str]],
-    filepath: str,
+def bulk_index(
+    ctx: click.Context, index: Optional[str], source: Optional[str], filepath: str
 ) -> None:
     """
-    Bulk ingest records into an index.
+    Bulk index records into an index.
 
-    By default, ingests into the current primary-aliased index for the provided source,
-    or creates a new one if there is no primary index for the source.
+    Must provide either the name of an existing index in the cluster or a valid source.
+    If source is provided, will index records into the primary-aliased index for the
+    source.
 
-    FILEPATH: path to ingest file, use format "s3://bucketname/objectname" for s3.
+    Logs an error and aborts if the provided index doesn't exist in the cluster.
+
+    FILEPATH: path to transformed records file, use format "s3://bucketname/objectname"
+    for s3.
     """
-    logger.info(
-        "Running ingest command with options: source=%s, new=%s, auto=%s, "
-        "extra_aliases=%s, filepath=%s",
-        source,
-        new,
-        auto,
-        extra_aliases,
-        filepath,
-    )
+    options = [index, source]
+    if all(options) or not any(options):
+        raise click.BadParameter(
+            "Must provide either an existing index name or a valid source."
+        )
     client = ctx.obj["CLIENT"]
+    if index and not client.indices.exists(index):
+        raise click.BadParameter(f"Index '{index}' does not exist in the cluster.")
+    if source:
+        index = tim_os.get_primary_index_for_source(client, source)
+    if not index:
+        raise click.BadParameter(
+            "No index name was passed and there is no primary-aliased index for "
+            f"source '{source}'."
+        )
+
+    logger.info("Bulk indexing records from file '%s' into index '%s'", filepath, index)
     record_iterator = helpers.parse_records(filepath)
-    index, is_new = tim_os.get_or_create_index_from_source(client, source, new)
-    logger.info(
-        "Ingesting records into %s index '%s'", "new" if is_new else "existing", index
-    )
     results = tim_os.bulk_index(client, index, record_iterator)
     logger.info(
-        "Ingest complete!\n   Errors: %d%s"
-        "\n  Created: %d\n  Updated: %d\n    Total: %d",
+        "Bulk indexing complete!\n   Errors: %d%s"
+        "\n  Created: %d\n  Updated: %d\n  --------\n    Total: %d",
         results["errors"],
         " (see logs for details)" if results["errors"] else "",
         results["created"],
         results["updated"],
         results["total"],
     )
-    if auto is True:
-        logger.info("'auto' flag was passed, automatic promotion is happening.")
-        ctx.invoke(promote, index=index, alias=extra_aliases)

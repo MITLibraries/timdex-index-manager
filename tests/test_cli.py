@@ -169,45 +169,85 @@ def test_promote_index(caplog, runner):
     assert "Index promoted" in caplog.text
 
 
-@freeze_time("2022-09-01")
-@my_vcr.use_cassette("ingest_no_options.yaml")
-def test_ingest_no_options(caplog, runner):
-    result = runner.invoke(
-        main,
-        ["ingest", "-s", "test", "tests/fixtures/sample_records.json"],
-    )
-    assert result.exit_code == 0
+# Test bulk record processing commands
+
+
+def test_bulk_index_neither_index_nor_source_passed(runner):
+    result = runner.invoke(main, ["bulk-index", "tests/fixtures/sample_records.json"])
+    assert result.exit_code == 2
     assert (
-        "Running ingest command with options: source=test, new=False, auto=False, "
-        "extra_aliases=(), filepath=tests/fixtures/sample_records.json" in caplog.text
+        "Must provide either an existing index name or a valid source." in result.stdout
     )
-    assert "Ingesting records into existing index" in caplog.text
-    assert "Ingest complete!" in caplog.text
 
 
-@freeze_time("2022-09-01")
-@my_vcr.use_cassette("ingest_all_options.yaml")
-def test_ingest_all_options(caplog, runner):
+def test_bulk_index_index_and_source_passed(runner):
     result = runner.invoke(
         main,
         [
-            "ingest",
+            "bulk-index",
+            "-i",
+            "dspace-2022-09-01t00-00-00",
             "-s",
-            "test",
-            "--new",
-            "--auto",
-            "-a",
-            "test-alias",
+            "dspace",
+            "tests/fixtures/sample_records.json",
+        ],
+    )
+    assert result.exit_code == 2
+    assert (
+        "Must provide either an existing index name or a valid source." in result.stdout
+    )
+
+
+@my_vcr.use_cassette("cli/bulk_index_nonexistent_index.yaml")
+def test_bulk_index_nonexistent_index_passed(runner):
+    result = runner.invoke(
+        main,
+        ["bulk-index", "--index", "wrong", "tests/fixtures/sample_records.json"],
+    )
+    assert result.exit_code == 2
+    assert "Index 'wrong' does not exist in the cluster." in result.stdout
+
+
+@my_vcr.use_cassette("cli/bulk_index_no_primary_index_for_source.yaml")
+def test_bulk_index_no_primary_index_for_source(runner):
+    result = runner.invoke(
+        main,
+        ["bulk-index", "-s", "dspace", "tests/fixtures/sample_records.json"],
+    )
+    assert result.exit_code == 2
+    assert "No index name was passed" in result.stdout
+
+
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("cli/bulk_index_with_index_name_success.yaml")
+def test_bulk_index_with_index_name_success(caplog, runner):
+    result = runner.invoke(
+        main,
+        [
+            "bulk-index",
+            "--index",
+            "dspace-2022-09-01t00-00-00",
             "tests/fixtures/sample_records.json",
         ],
     )
     assert result.exit_code == 0
     assert (
-        "Running ingest command with options: source=test, new=True, auto=True, "
-        "extra_aliases=('test-alias',), filepath=tests/fixtures/sample_records.json"
-        in caplog.text
+        "Bulk indexing records from file 'tests/fixtures/sample_records.json' into "
+        "index 'dspace-2022-09-01t00-00-00'" in caplog.text
     )
-    assert "Ingesting records into new index" in caplog.text
-    assert "Ingest complete!" in caplog.text
-    assert "'auto' flag was passed, automatic promotion is happening." in caplog.text
-    assert "Index promoted." in caplog.text
+    assert "Bulk indexing complete!" in caplog.text
+
+
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("cli/bulk_index_with_source_success.yaml")
+def test_bulk_index_with_source_success(caplog, runner):
+    result = runner.invoke(
+        main,
+        ["bulk-index", "--source", "dspace", "tests/fixtures/sample_records.json"],
+    )
+    assert result.exit_code == 0
+    assert (
+        "Bulk indexing records from file 'tests/fixtures/sample_records.json' into "
+        "index 'dspace-2022-09-01t00-00-00'" in caplog.text
+    )
+    assert "Bulk indexing complete!" in caplog.text
