@@ -5,9 +5,9 @@ from typing import Optional
 
 import rich_click as click
 
-from tim import helpers
+from tim import errors, helpers
 from tim import opensearch as tim_os
-from tim.config import PRIMARY_ALIAS, configure_logger, configure_sentry
+from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,49 @@ def ping(ctx: click.Context) -> None:
 
 
 # Index commands
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    callback=helpers.validate_index_name,
+    help="Optional name to use for new index, must use the convention "
+    "'source-YYYY-MM-DDthh-mm-ss'.",
+)
+@click.option(
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help="Optional source to use for the new index name, must be a valid source from "
+    "the configured sources list.",
+)
+@click.pass_context
+def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> None:
+    """
+    Create a new index in the cluster.
+
+    Must provide either the index name or source option. If source is provided, will
+    create an index named according to our convention with the source and a generated
+    timestemp.
+
+    Raises an error if an index with the provided index name already exists, or if the
+    provided index name does not match the specified naming convention.
+    """
+    options = [index, source]
+    if all(options) or not any(options):
+        raise click.BadParameter(
+            "Must provide either a name or source for the new index."
+        )
+    if source:
+        index = helpers.generate_index_name(source)
+    try:
+        new_index = tim_os.create_index(ctx.obj["CLIENT"], str(index))
+    except errors.IndexExistsError as error:
+        logger.error(error)
+        raise click.Abort()
+    logger.info("Index '%s' created.", new_index)
+    ctx.invoke(indexes)
 
 
 @main.command()

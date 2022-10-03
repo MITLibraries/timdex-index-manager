@@ -61,6 +61,51 @@ def test_ping(runner):
     assert "Name: docker-cluster" in result.stdout
 
 
+def test_create_index_neither_name_nor_source_passed(runner):
+    result = runner.invoke(main, ["create"])
+    assert result.exit_code == 2
+    assert "Must provide either a name or source for the new index." in result.stdout
+
+
+def test_create_index_name_and_source_passed(runner):
+    result = runner.invoke(
+        main,
+        ["create", "--index", "aspace-2022-09-01t12-34-56", "--source", "aspace"],
+    )
+    assert result.exit_code == 2
+    assert "Must provide either a name or source for the new index." in result.stdout
+
+
+def test_create_index_invalid_name_passed(runner):
+    result = runner.invoke(main, ["create", "--index", "wrong"])
+    assert result.exit_code == 2
+
+
+def test_create_index_invalid_source_passed(runner):
+    result = runner.invoke(main, ["create", "--source", "wrong"])
+    assert result.exit_code == 2
+
+
+@my_vcr.use_cassette("cli/create_index_exists.yaml")
+def test_create_index_exists(caplog, runner):
+    result = runner.invoke(main, ["create", "--index", "aspace-2022-09-20t15-59-38"])
+    assert result.exit_code == 1
+    assert (
+        "tim.cli",
+        40,
+        "Index 'aspace-2022-09-20t15-59-38' already exists in the cluster, cannot "
+        "create.",
+    ) in caplog.record_tuples
+
+
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("cli/create_index_success.yaml")
+def test_create_index_success(caplog, runner):
+    result = runner.invoke(main, ["create", "--source", "aspace"])
+    assert result.exit_code == 0
+    assert "Index 'aspace-2022-09-01t00-00-00' created." in caplog.text
+
+
 @my_vcr.use_cassette("delete_success.yaml")
 def test_delete_index_with_force(runner):
     result = runner.invoke(main, ["delete", "-i", "test-index", "-f"])

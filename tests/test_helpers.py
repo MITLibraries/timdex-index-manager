@@ -1,4 +1,5 @@
 import pytest
+from click.exceptions import BadParameter
 from freezegun import freeze_time
 
 from tim import helpers
@@ -58,3 +59,29 @@ def test_parse_records():
     records = list(helpers.parse_records("tests/fixtures/sample_records.json"))
     assert len(records) == 6
     assert isinstance(records[0], dict)
+
+
+def test_validate_index_name_no_value():
+    assert helpers.validate_index_name({}, "name", None) is None
+
+
+def test_validate_index_name_invalid_date():
+    with pytest.raises(BadParameter):
+        helpers.validate_index_name({}, "name", "aspace-2022-09-01t13:14:15")
+
+
+def test_validate_index_name_invalid_source():
+    with pytest.raises(BadParameter):
+        helpers.validate_index_name({}, "name", "wrong-2022-09-01t13-14-15")
+
+
+def test_validate_index_name_invalid_syntax():
+    with pytest.raises(BadParameter):
+        helpers.validate_index_name({}, "name", "everythingaboutthisiswrong")
+
+
+def test_validate_index_name_success():
+    assert (
+        helpers.validate_index_name({}, "name", "aspace-2022-09-01t13-14-15")
+        == "aspace-2022-09-01t13-14-15"
+    )
