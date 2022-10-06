@@ -26,7 +26,7 @@ def generate_index_name(source: str) -> str:
     'source-YYYY-MM-DDthh-mm-ss' where the datetime is the datetime this operation is
     run.
     """
-    return f"{source}-{datetime.today().strftime('%Y-%m-%dt%H-%M-%S')}"
+    return f"{source}-{datetime.now().strftime('%Y-%m-%dt%H-%M-%S')}"
 
 
 def generate_bulk_actions(

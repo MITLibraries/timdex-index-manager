@@ -73,7 +73,10 @@ def test_create_index_name_and_source_passed(runner):
         ["create", "--index", "aspace-2022-09-01t12-34-56", "--source", "aspace"],
     )
     assert result.exit_code == 2
-    assert "Must provide either a name or source for the new index." in result.stdout
+    assert (
+        "Only one of --index and --source options is allowed, not both."
+        in result.stdout
+    )
 
 
 def test_create_index_invalid_name_passed(runner):
@@ -194,7 +197,8 @@ def test_bulk_index_index_and_source_passed(runner):
     )
     assert result.exit_code == 2
     assert (
-        "Must provide either an existing index name or a valid source." in result.stdout
+        "Only one of --index and --source options is allowed, not both."
+        in result.stdout
     )
 
 

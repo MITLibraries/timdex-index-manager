@@ -161,7 +161,7 @@ def create_index(client: OpenSearch, name: str) -> str:
     except RequestError as error:
         if (
             isinstance(error.info, dict)
-            and error.info.get("error", []).get("type")
+            and error.info.get("error", {}).get("type")
             == "resource_already_exists_exception"
         ):
             raise IndexExistsError(name) from error

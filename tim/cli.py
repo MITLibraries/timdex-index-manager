@@ -138,8 +138,12 @@ def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> N
     provided index name does not match the specified naming convention.
     """
     options = [index, source]
-    if all(options) or not any(options):
-        raise click.BadParameter(
+    if all(options):
+        raise click.UsageError(
+            "Only one of --index and --source options is allowed, not both."
+        )
+    if not any(options):
+        raise click.UsageError(
             "Must provide either a name or source for the new index."
         )
     if source:
@@ -286,8 +290,12 @@ def bulk_index(
     for s3.
     """
     options = [index, source]
-    if all(options) or not any(options):
-        raise click.BadParameter(
+    if all(options):
+        raise click.UsageError(
+            "Only one of --index and --source options is allowed, not both."
+        )
+    if not any(options):
+        raise click.UsageError(
             "Must provide either an existing index name or a valid source."
         )
     client = ctx.obj["CLIENT"]
