@@ -3,19 +3,36 @@ from datetime import timedelta
 from time import perf_counter
 from typing import Optional
 
-import click
+import rich_click as click
 
-from tim import helpers
+from tim import errors, helpers
 from tim import opensearch as tim_os
-from tim.config import PRIMARY_ALIAS, configure_logger, configure_sentry
+from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
 
 logger = logging.getLogger(__name__)
+
+click.rich_click.COMMAND_GROUPS = {
+    "tim": [
+        {
+            "name": "Get cluster-level information",
+            "commands": ["ping", "indexes", "aliases"],
+        },
+        {
+            "name": "Index management commands",
+            "commands": ["create", "delete", "promote", "demote"],
+        },
+        {
+            "name": "Bulk record processing commands",
+            "commands": ["bulk-index"],
+        },
+    ]
+}
 
 
 # Main command group
 
 
-@click.group()
+@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option(
     "-u",
     "--url",
@@ -31,6 +48,11 @@ logger = logging.getLogger(__name__)
 )
 @click.pass_context
 def main(ctx: click.Context, url: str, verbose: bool) -> None:
+    """
+    TIM provides commands for interacting with OpenSearch indexes.
+
+    For more details on a specific command, run tim COMMAND -h.
+    """
     ctx.ensure_object(dict)
     ctx.obj["START_TIME"] = perf_counter()
     root_logger = logging.getLogger()
@@ -90,138 +112,49 @@ def ping(ctx: click.Context) -> None:
 
 @main.command()
 @click.option(
-    "-s",
-    "--source",
-    required=True,
-    help="Short name for source of records, e.g. 'dspace'. Will be used to identify or "
-    "create index according to the naming convention 'source-timestamp",
-)
-@click.option(
-    "--new",
-    is_flag=True,
-    help="Create a new index instead of ingesting into the current production index "
-    "for the source",
-)
-@click.option(
-    "--auto",
-    is_flag=True,
-    help="Automatically promote index on ingest completion. Will promote the index to "
-    "the primary alias (always), any existing indexes for the source (if any), and any "
-    "additional aliases passed via the --aliases option. Demotes existing index(es) "
-    "for the source in all aliases, if there are any.",
-)
-@click.option(
-    "-a",
-    "--aliases",
-    "extra_aliases",
-    multiple=True,
-    help="Additional aliases to promote the index to besisdes the primary alias. This "
-    "is only useful if the '--auto' flag is also passed. Note: the primary alias is "
-    "always assigned when an index is promoted and does not need to be passed "
-    "explicitly.",
-)
-@click.argument("filepath", type=click.Path())
-@click.pass_context
-def ingest(  # pylint: disable=too-many-arguments
-    ctx: click.Context,
-    source: str,
-    new: bool,
-    auto: bool,
-    extra_aliases: Optional[list[str]],
-    filepath: str,
-) -> None:
-    """
-    Bulk ingest records into an index.
-
-    By default, ingests into the current primary-aliased index for the provided source,
-    or creates a new one if there is no primary index for the source.
-
-    FILEPATH: path to ingest file, use format "s3://bucketname/objectname" for s3.
-    """
-    logger.info(
-        "Running ingest command with options: source=%s, new=%s, auto=%s, "
-        "extra_aliases=%s, filepath=%s",
-        source,
-        new,
-        auto,
-        extra_aliases,
-        filepath,
-    )
-    client = ctx.obj["CLIENT"]
-    record_iterator = helpers.parse_records(filepath)
-    index, is_new = tim_os.get_or_create_index_from_source(client, source, new)
-    logger.info(
-        "Ingesting records into %s index '%s'", "new" if is_new else "existing", index
-    )
-    results = tim_os.bulk_index(client, index, record_iterator)
-    logger.info(
-        "Ingest complete!\n   Errors: %d%s"
-        "\n  Created: %d\n  Updated: %d\n    Total: %d",
-        results["errors"],
-        " (see logs for details)" if results["errors"] else "",
-        results["created"],
-        results["updated"],
-        results["total"],
-    )
-    if auto is True:
-        logger.info("'auto' flag was passed, automatic promotion is happening.")
-        ctx.invoke(promote, index=index, alias=extra_aliases)
-
-
-@main.command()
-@click.option(
-    "-i", "--index", required=True, help="Name of the OpenSearch index to promote."
-)
-@click.option(
-    "-a",
-    "--alias",
-    multiple=True,
-    help="Alias to promote the index to in addition to the primary alias. May "
-    "be repeated to promote the index to multiple aliases at once.",
-)
-@click.pass_context
-def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
-    """
-    Promote an index to the primary alias and add it to any additional provided aliases.
-
-    This command promotes an index to the primary alias, any alias that already has an
-    index for the same source, and any additional alias(es) passed to the command. If
-    there is already an index for the source in any alias it is promoted to, the
-    existing index will be demoted.
-
-    This action is atomic.
-    """
-    client = ctx.obj["CLIENT"]
-    tim_os.promote_index(client, index, extra_aliases=alias)
-    logger.info(
-        "Index promoted. Current aliases for index '%s': %s",
-        index,
-        tim_os.get_index_aliases(client, index),
-    )
-    click.echo("Current state of all aliases:")
-    ctx.invoke(aliases)
-
-
-@main.command()
-@click.option(
     "-i",
     "--index",
-    required=True,
-    help="Name of the OpenSearch index to copy.",
+    callback=helpers.validate_index_name,
+    help="Optional name to use for new index, must use the convention "
+    "'source-YYYY-MM-DDthh-mm-ss'.",
 )
 @click.option(
-    "-d",
-    "--destination",
-    required=True,
-    help="Name of the destination index.",
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help="Optional source to use for the new index name, must be a valid source from "
+    "the configured sources list.",
 )
-def reindex(index: str, destination: str) -> None:  # noqa
+@click.pass_context
+def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> None:
     """
-    Reindex one index to another index.
+    Create a new index in the cluster.
 
-    Copy one index to another. The doc source must be present in the original index.
+    Must provide either the index name or source option. If source is provided, will
+    create an index named according to our convention with the source and a generated
+    timestemp.
+
+    Raises an error if an index with the provided index name already exists, or if the
+    provided index name does not match the specified naming convention.
     """
-    logger.info("'reindex' command not yet implemented")
+    options = [index, source]
+    if all(options):
+        raise click.UsageError(
+            "Only one of --index and --source options is allowed, not both."
+        )
+    if not any(options):
+        raise click.UsageError(
+            "Must provide either a name or source for the new index."
+        )
+    if source:
+        index = helpers.generate_index_name(source)
+    try:
+        new_index = tim_os.create_index(ctx.obj["CLIENT"], str(index))
+    except errors.IndexExistsError as error:
+        logger.error(error)
+        raise click.Abort()
+    logger.info("Index '%s' created.", new_index)
+    ctx.invoke(indexes)
 
 
 @main.command()
@@ -290,3 +223,101 @@ def demote(ctx: click.Context, index: str) -> None:
         tim_os.remove_alias(client, index, alias)
     click.echo(f"Index '{index}' demoted from aliases: {index_aliases}")
     ctx.invoke(aliases)
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    required=True,
+    help="Name of the OpenSearch index to promote.",
+)
+@click.option(
+    "-a",
+    "--alias",
+    multiple=True,
+    help="Alias to promote the index to in addition to the primary alias. May "
+    "be repeated to promote the index to multiple aliases at once.",
+)
+@click.pass_context
+def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
+    """
+    Promote an index to the primary alias and add it to any additional provided aliases.
+
+    This command promotes an index to the primary alias, any alias that already has an
+    index for the same source, and any additional alias(es) passed to the command. If
+    there is already an index for the source in any alias it is promoted to, the
+    existing index will be demoted.
+
+    This action is atomic.
+    """
+    client = ctx.obj["CLIENT"]
+    tim_os.promote_index(client, index, extra_aliases=alias)
+    logger.info(
+        "Index promoted. Current aliases for index '%s': %s",
+        index,
+        tim_os.get_index_aliases(client, index),
+    )
+    ctx.invoke(aliases)
+
+
+# Bulk record processing commands
+
+
+@main.command()
+@click.option("-i", "--index", help="Name of the index to bulk index records into.")
+@click.option(
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help="Source whose primary-aliased index to bulk index records into.",
+)
+@click.argument("filepath", type=click.Path())
+@click.pass_context
+def bulk_index(
+    ctx: click.Context, index: Optional[str], source: Optional[str], filepath: str
+) -> None:
+    """
+    Bulk index records into an index.
+
+    Must provide either the name of an existing index in the cluster or a valid source.
+    If source is provided, will index records into the primary-aliased index for the
+    source.
+
+    Logs an error and aborts if the provided index doesn't exist in the cluster.
+
+    FILEPATH: path to transformed records file, use format "s3://bucketname/objectname"
+    for s3.
+    """
+    options = [index, source]
+    if all(options):
+        raise click.UsageError(
+            "Only one of --index and --source options is allowed, not both."
+        )
+    if not any(options):
+        raise click.UsageError(
+            "Must provide either an existing index name or a valid source."
+        )
+    client = ctx.obj["CLIENT"]
+    if index and not client.indices.exists(index):
+        raise click.BadParameter(f"Index '{index}' does not exist in the cluster.")
+    if source:
+        index = tim_os.get_primary_index_for_source(client, source)
+    if not index:
+        raise click.BadParameter(
+            "No index name was passed and there is no primary-aliased index for "
+            f"source '{source}'."
+        )
+
+    logger.info("Bulk indexing records from file '%s' into index '%s'", filepath, index)
+    record_iterator = helpers.parse_records(filepath)
+    results = tim_os.bulk_index(client, index, record_iterator)
+    logger.info(
+        "Bulk indexing complete!\n   Errors: %d%s"
+        "\n  Created: %d\n  Updated: %d\n  --------\n    Total: %d",
+        results["errors"],
+        " (see logs for details)" if results["errors"] else "",
+        results["created"],
+        results["updated"],
+        results["total"],
+    )

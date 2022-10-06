@@ -5,7 +5,7 @@ from typing import Iterator, Optional
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
-from opensearchpy.exceptions import NotFoundError
+from opensearchpy.exceptions import NotFoundError, RequestError
 from opensearchpy.helpers import streaming_bulk
 
 from tim import helpers
@@ -14,7 +14,7 @@ from tim.config import (
     configure_index_settings,
     opensearch_request_timeout,
 )
-from tim.errors import AliasNotFoundError, IndexNotFoundError
+from tim.errors import AliasNotFoundError, IndexExistsError, IndexNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,16 @@ def create_index(client: OpenSearch, name: str) -> str:
     """
     mappings, settings = configure_index_settings()
     request_body = json.dumps({"settings": settings, "mappings": mappings})
-    response = client.indices.create(name, body=request_body)
+    try:
+        response = client.indices.create(name, body=request_body)
+    except RequestError as error:
+        if (
+            isinstance(error.info, dict)
+            and error.info.get("error", {}).get("type")
+            == "resource_already_exists_exception"
+        ):
+            raise IndexExistsError(name) from error
+        raise error
     logger.debug(response)
     return response["index"]
 

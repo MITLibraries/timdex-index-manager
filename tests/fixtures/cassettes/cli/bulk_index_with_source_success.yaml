@@ -10,17 +10,17 @@ interactions:
     uri: http://localhost:9200/_cat/aliases?format=json
   response:
     body:
-      string: '[{"alias":"all-current","index":"test-2022-09-08t16-26-22","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
+      string: '[{"alias":"all-current","index":"dspace-2022-09-01t00-00-00","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
     headers:
       content-length:
-      - '135'
+      - '137'
       content-type:
       - application/json; charset=UTF-8
     status:
       code: 200
       message: OK
 - request:
-    body: "{\"index\":{\"_id\":\"mit:alma:990026671500206761\",\"_index\":\"test-2022-09-08t16-26-22\"}}\n{\"alternate_titles\":[{\"kind\":\"Alternate
+    body: "{\"index\":{\"_id\":\"mit:alma:990026671500206761\",\"_index\":\"dspace-2022-09-01t00-00-00\"}}\n{\"alternate_titles\":[{\"kind\":\"Alternate
       title\",\"value\":\"Best of Paquito D'Rivera\"}],\"call_numbers\":[\"781.657\"],\"citation\":\"D'Rivera,
       Paquito et al. 2008. Portraits of Cuba\",\"content_type\":[\"Sound recording\"],\"contents\":[\"Chucho
       -- Havana cafe -- The peanut vendor -- A night in Tunisia -- Mambo a la Kenton
@@ -42,7 +42,7 @@ interactions:
       resource (1 sound file)\",\"publication_information\":[\"[New York, N.Y.] :
       Chesky Records, p2008.\"],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990026671500206761\",\"subjects\":[{\"value\":[\"Jazz.\",\"Latin
       jazz.\",\"Clarinet music (Jazz)\",\"Saxophone music (Jazz)\"]}],\"timdex_record_id\":\"mit:alma:990026671500206761\",\"title\":\"Spice
-      it up! the best of Paquito D'Rivera.\"}\n{\"index\":{\"_id\":\"mit:alma:990027672770206761\",\"_index\":\"test-2022-09-08t16-26-22\"}}\n{\"call_numbers\":[\"TX724.5.A1\",\"641.595\"],\"content_type\":[\"Text\"],\"contents\":[\"Breakfast
+      it up! the best of Paquito D'Rivera.\"}\n{\"index\":{\"_id\":\"mit:alma:990027672770206761\",\"_index\":\"dspace-2022-09-01t00-00-00\"}}\n{\"call_numbers\":[\"TX724.5.A1\",\"641.595\"],\"content_type\":[\"Text\"],\"contents\":[\"Breakfast
       -- Lunch & small eats -- Date night in -- Celebrations & gatherings -- On the
       side -- Sweet -- Drinks.\"],\"contributors\":[{\"kind\":\"author\",\"value\":\"McTernan,
       Cynthia Chen, author.\"}],\"dates\":[{\"kind\":\"Date of publication\",\"value\":\"2018\"}],\"edition\":\"First
@@ -77,7 +77,7 @@ interactions:
       the food we make and eat is rarely the product of one culture or moment, but
       is richly interwoven--and though some dishes might seem new or different, they
       are often more alike than they appear. -- Amazon.\"],\"timdex_record_id\":\"mit:alma:990027672770206761\",\"title\":\"A
-      common table : 80 recipes and stories from my shared cultures /\"}\n{\"index\":{\"_id\":\"mit:alma:9933052979806761\",\"_index\":\"test-2022-09-08t16-26-22\"}}\n{\"call_numbers\":[\"SB351.P3\",\"633\"],\"content_type\":[\"Text\"],\"contributors\":[{\"kind\":\"contributor\",\"value\":\"American
+      common table : 80 recipes and stories from my shared cultures /\"}\n{\"index\":{\"_id\":\"mit:alma:9933052979806761\",\"_index\":\"dspace-2022-09-01t00-00-00\"}}\n{\"call_numbers\":[\"SB351.P3\",\"633\"],\"content_type\":[\"Text\"],\"contributors\":[{\"kind\":\"contributor\",\"value\":\"American
       Peanut Research and Education Society.\"}],\"dates\":[{\"kind\":\"Date of publication\",\"value\":\"2005\"}],\"identifiers\":[{\"kind\":\"issn\",\"value\":\"1943-7668\"},{\"kind\":\"oclc\",\"value\":\"232113616\"},{\"kind\":\"lccn\",\"value\":\"2008202156\"}],\"languages\":[\"English\"],\"literary_form\":\"fiction\",\"locations\":[{\"kind\":\"Place
       of publication\",\"value\":\"Oklahoma\"}],\"notes\":[{\"value\":[\"Refereed/Peer-reviewed\",\"Electronic
       reproduction. [S.l.] : HathiTrust Digital Library, 2010.\",\"Latest issue consulted:
@@ -86,7 +86,7 @@ interactions:
       resource\",\"publication_frequency\":[\"Semiannual\"],\"publication_information\":[\"Perkins,
       OK : American Peanut Research and Education Society\"],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma9933052979806761\",\"subjects\":[{\"value\":[\"Peanuts
       Periodicals.\",\"(OCoLC)fst01055999 Peanuts.\"]}],\"timdex_record_id\":\"mit:alma:9933052979806761\",\"title\":\"Peanut
-      science.\"}\n{\"index\":{\"_id\":\"mit:dspace:1721.1-113566\",\"_index\":\"test-2022-09-08t16-26-22\"}}\n{\"citation\":\"Ranjram,
+      science.\"}\n{\"index\":{\"_id\":\"mit:dspace:1721.1-113566\",\"_index\":\"dspace-2022-09-01t00-00-00\"}}\n{\"citation\":\"Ranjram,
       Mike K., Intae Moon, and David J. Perreault. 'Variable-Inverter-Rectifier-Transformer:
       A Hybrid Electronic and Magnetic Structure Enabling&#13; Adjustable High Step-Down
       Conversion Ratios.' 2017 IEEE Workshop on Control and Modeling for Power Electronics
@@ -122,7 +122,7 @@ interactions:
       9, 12V) validates the operating principle and modelling of the proposed structure
       and achieves conversion efficiencies between 93.4% and&#13; 95.7% at 25-36 W.\"],\"timdex_record_id\":\"mit:dspace:1721.1-113566\",\"title\":\"Variable-Inverter-Rectifier-Transformer:
       A Hybrid Electronic and Magnetic Structure Enabling Adjustable High Step-Down
-      Conversion Ratios\"}\n{\"index\":{\"_id\":\"mit:archivesspace:VC.0002\",\"_index\":\"test-2022-09-08t16-26-22\"}}\n{\"citation\":\"Charles
+      Conversion Ratios\"}\n{\"index\":{\"_id\":\"mit:archivesspace:VC.0002\",\"_index\":\"dspace-2022-09-01t00-00-00\"}}\n{\"citation\":\"Charles
       J. Connick Stained Glass Foundation Collection, VC-0002, box X. Massachusetts
       Institute of Technology, Department of Distinctive Collections, Cambridge, Massachusetts.\",\"content_type\":[\"Archival
       collection\"],\"contents\":[\"This collection is organized into ten series\",\"Series
@@ -183,7 +183,7 @@ interactions:
       ArchivesSpace\",\"source_link\":\"https://archivesspace.mit.edu/repositories/2/resources/1\",\"subjects\":[{\"kind\":\"LCSH\",\"value\":[\"Glass
       painting and staining\"]},{\"kind\":\"NAF\",\"value\":[\"Connick, Charles J.
       (Charles Jay)\"]}],\"timdex_record_id\":\"mit:archivesspace:VC.0002\",\"title\":\"Charles
-      J. Connick Stained Glass Foundation Collection\"}\n{\"index\":{\"_id\":\"mit:alma:990011240870206761\",\"_index\":\"test-2022-09-08t16-26-22\"}}\n{\"call_numbers\":[\"SB106.B56.C76
+      J. Connick Stained Glass Foundation Collection\"}\n{\"index\":{\"_id\":\"mit:alma:990011240870206761\",\"_index\":\"dspace-2022-09-01t00-00-00\"}}\n{\"call_numbers\":[\"SB106.B56.C76
       2002\",\"631.5/233\"],\"contents\":[\"1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12.
       13. 14. 15. Overview of Crop Biotechnology / Defining Biotechnology: Increasingly
       Important and Increasingly Difficult / Genetically Modified Crop Approvals and
@@ -233,7 +233,7 @@ interactions:
       biotechnology /\"}\n"
     headers:
       Content-Length:
-      - '19878'
+      - '19890'
       content-type:
       - application/json
       user-agent:
@@ -242,10 +242,10 @@ interactions:
     uri: http://localhost:9200/_bulk
   response:
     body:
-      string: '{"took":44,"errors":false,"items":[{"index":{"_index":"test-2022-09-08t16-26-22","_type":"_doc","_id":"mit:alma:990026671500206761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":6,"_primary_term":1,"status":200}},{"index":{"_index":"test-2022-09-08t16-26-22","_type":"_doc","_id":"mit:alma:990027672770206761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":7,"_primary_term":1,"status":200}},{"index":{"_index":"test-2022-09-08t16-26-22","_type":"_doc","_id":"mit:alma:9933052979806761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":8,"_primary_term":1,"status":200}},{"index":{"_index":"test-2022-09-08t16-26-22","_type":"_doc","_id":"mit:dspace:1721.1-113566","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":9,"_primary_term":1,"status":200}},{"index":{"_index":"test-2022-09-08t16-26-22","_type":"_doc","_id":"mit:archivesspace:VC.0002","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":10,"_primary_term":1,"status":200}},{"index":{"_index":"test-2022-09-08t16-26-22","_type":"_doc","_id":"mit:alma:990011240870206761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":11,"_primary_term":1,"status":200}}]}'
+      string: '{"took":32,"errors":false,"items":[{"index":{"_index":"dspace-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:990026671500206761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":6,"_primary_term":1,"status":200}},{"index":{"_index":"dspace-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:990027672770206761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":7,"_primary_term":1,"status":200}},{"index":{"_index":"dspace-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:9933052979806761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":8,"_primary_term":1,"status":200}},{"index":{"_index":"dspace-2022-09-01t00-00-00","_type":"_doc","_id":"mit:dspace:1721.1-113566","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":9,"_primary_term":1,"status":200}},{"index":{"_index":"dspace-2022-09-01t00-00-00","_type":"_doc","_id":"mit:archivesspace:VC.0002","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":10,"_primary_term":1,"status":200}},{"index":{"_index":"dspace-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:990011240870206761","_version":2,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":11,"_primary_term":1,"status":200}}]}'
     headers:
       content-length:
-      - '1363'
+      - '1375'
       content-type:
       - application/json; charset=UTF-8
     status:
@@ -261,7 +261,7 @@ interactions:
       user-agent:
       - opensearch-py/2.0.0 (Python 3.10.6)
     method: POST
-    uri: http://localhost:9200/test-2022-09-08t16-26-22/_refresh
+    uri: http://localhost:9200/dspace-2022-09-01t00-00-00/_refresh
   response:
     body:
       string: '{"_shards":{"total":2,"successful":1,"failed":0}}'

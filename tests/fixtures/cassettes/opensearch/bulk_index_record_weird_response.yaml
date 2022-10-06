@@ -1,0 +1,70 @@
+interactions:
+  - request:
+      body:
+        "{\"index\":{\"_id\":\"mit:alma:990026671500206761\",\"_index\":\"test-index\"}}\n{\"alternate_titles\":[{\"kind\":\"Alternate
+        title\",\"value\":\"Best of Paquito D'Rivera\",\"not-a-subfield\":\"This shouldn't
+        be here\"}],\"call_numbers\":[\"781.657\"],\"citation\":\"D'Rivera, Paquito
+        et al. 2008. Portraits of Cuba\",\"content_type\":[\"Sound recording\"],\"contents\":[\"Chucho
+        -- Havana cafe -- The peanut vendor -- A night in Tunisia -- Mambo a la Kenton
+        -- Echale salsita -- Drume negrita -- Tropicana nights -- Who's smoking -- Tico
+        tico -- Portraits of Cuba -- Excerpt from Aires tropicales -- What are you doing
+        tomorrow night -- A mi que/El manisero.\"],\"contributors\":[{\"kind\":\"author\",\"value\":\"D'Rivera,
+        Paquito, 1948-\"},{\"kind\":\"contributor\",\"value\":\"D'Rivera, Paquito, 1948-\"},{\"kind\":\"contributor\",\"value\":\"P\xE9rez,
+        Danilo.\"},{\"kind\":\"contributor\",\"value\":\"Gilbert, Wolfe.\"},{\"kind\":\"contributor\",\"value\":\"Gillespie,
+        Dizzy, 1917-1993.\"},{\"kind\":\"contributor\",\"value\":\"P\xE9rez Prado, 1916-1989.\"},{\"kind\":\"contributor\",\"value\":\"Pi\xF1eiro,
+        Ignacio, 1888-1969.\"},{\"kind\":\"contributor\",\"value\":\"Grenet, Ernesto
+        Wood.\"},{\"kind\":\"contributor\",\"value\":\"Roditi, Claudio.\"},{\"kind\":\"contributor\",\"value\":\"Abreu,
+        Zequinha de, 1880-1935.\"},{\"kind\":\"contributor\",\"value\":\"Godoy, Lucio.\"},{\"kind\":\"contributor\",\"value\":\"Hern\xE1ndez,
+        Rafael.\"}],\"dates\":[{\"kind\":\"Date of publication\",\"value\":\"2008\"}],\"identifiers\":[{\"kind\":\"oclc\",\"value\":\"811549562\"}],\"languages\":[\"No
+        linguistic content\"],\"links\":[{\"kind\":\"Digital object link\",\"text\":\"Naxos
+        Music Library\",\"url\":\"http://BLCMIT.NaxosMusicLibrary.com/catalogue/item.asp?cid=JD-342\"}],\"locations\":[{\"kind\":\"Place
+        of publication\",\"value\":\"New York (State)\"}],\"notes\":[{\"value\":[\"Paquito
+        d' Rivera, saxophone ; Paquito d' Rivera, soprano saxophone.\",\"Description
+        based on hard copy version record.\"]}],\"physical_description\":\"1 online
+        resource (1 sound file)\",\"publication_information\":[\"[New York, N.Y.] :
+        Chesky Records, p2008.\"],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990026671500206761\",\"subjects\":[{\"value\":[\"Jazz.\",\"Latin
+        jazz.\",\"Clarinet music (Jazz)\",\"Saxophone music (Jazz)\"]}],\"timdex_record_id\":\"mit:alma:990026671500206761\",\"title\":\"Spice
+        it up! the best of Paquito D'Rivera.\"}\n"
+      headers:
+        Content-Length:
+          - "2276"
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: POST
+      uri: http://localhost:9200/_bulk
+    response:
+      body:
+        string: '{"took":59,"errors":false,"items":[{"index":{"_index":"test-index","_type":"_doc","_id":"mit:alma:990026671500206761","_version":2,"result":"surprise!","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":6,"_primary_term":1,"status":200}}]}'
+      headers:
+        content-length:
+          - "301"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        Content-Length:
+          - "0"
+        content-type:
+          - application/json
+        user-agent:
+          - opensearch-py/2.0.0 (Python 3.10.6)
+      method: POST
+      uri: http://localhost:9200/test-index/_refresh
+    response:
+      body:
+        string: '{"_shards":{"total":2,"successful":1,"failed":0}}'
+      headers:
+        content-length:
+          - "49"
+        content-type:
+          - application/json; charset=UTF-8
+      status:
+        code: 200
+        message: OK
+version: 1

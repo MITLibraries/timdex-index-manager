@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Generator, Iterator
+from typing import Generator, Iterator, Optional
 
+import click
 import ijson
 import smart_open
 
-VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
+from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
 
 
 def confirm_action(index: str, input_prompt: str) -> bool:
@@ -25,7 +26,7 @@ def generate_index_name(source: str) -> str:
     'source-YYYY-MM-DDthh-mm-ss' where the datetime is the datetime this operation is
     run.
     """
-    return f"{source}-{datetime.today().strftime('%Y-%m-%dt%H-%M-%S')}"
+    return f"{source}-{datetime.now().strftime('%Y-%m-%dt%H-%M-%S')}"
 
 
 def generate_bulk_actions(
@@ -66,3 +67,32 @@ def parse_records(filepath: str) -> Generator[dict, None, None]:
     with smart_open.open(filepath, "rb") as json_input:
         for item in ijson.items(json_input, "item"):
             yield item
+
+
+def validate_index_name(
+    ctx: click.Context, parameter_name: str, value: Optional[str]  # noqa
+) -> Optional[str]:
+    """Click callback to validate a provided index name against our business rules."""
+    if value is None:
+        return value
+    try:
+        source_end = value.index("-")
+        date_start = source_end + 1
+    except ValueError as error:
+        raise click.BadParameter(
+            "Index name must be in the format <source>-<timestamp>, e.g. "
+            "'aspace-2022-01-01t12:34:56'."
+        ) from error
+    if value[:source_end] not in VALID_SOURCES:
+        raise click.BadParameter(
+            "Source in index name must be a valid configured source, one of: "
+            f"{VALID_SOURCES}"
+        )
+    try:
+        datetime.strptime(value[date_start:], "%Y-%m-%dt%H-%M-%S")
+    except ValueError as error:
+        raise click.BadParameter(
+            "Date in index name must be in the format 'YYYY-MM-DDthh-mm-ss', e.g. "
+            "'aspace_2022-01-01t12:34:56'."
+        ) from error
+    return value

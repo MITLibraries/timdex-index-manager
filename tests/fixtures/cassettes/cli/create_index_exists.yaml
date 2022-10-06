@@ -69,16 +69,18 @@ interactions:
       user-agent:
       - opensearch-py/2.0.0 (Python 3.10.6)
     method: PUT
-    uri: http://localhost:9200/test-index
+    uri: http://localhost:9200/aspace-2022-09-20t15-59-38
   response:
     body:
-      string: '{"acknowledged":true,"shards_acknowledged":true,"index":"test-index"}'
+      string: '{"error":{"root_cause":[{"type":"resource_already_exists_exception","reason":"index
+        [aspace-2022-09-20t15-59-38/6bKmavQYQfuMIpyK1MVikg] already exists","index":"aspace-2022-09-20t15-59-38","index_uuid":"6bKmavQYQfuMIpyK1MVikg"}],"type":"resource_already_exists_exception","reason":"index
+        [aspace-2022-09-20t15-59-38/6bKmavQYQfuMIpyK1MVikg] already exists","index":"aspace-2022-09-20t15-59-38","index_uuid":"6bKmavQYQfuMIpyK1MVikg"},"status":400}'
     headers:
       content-length:
-      - '69'
+      - '445'
       content-type:
       - application/json; charset=UTF-8
     status:
-      code: 200
-      message: OK
+      code: 400
+      message: Bad Request
 version: 1

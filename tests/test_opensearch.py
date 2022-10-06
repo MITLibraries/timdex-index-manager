@@ -3,12 +3,12 @@ from unittest import mock
 
 import pytest
 from freezegun import freeze_time
-from opensearchpy.exceptions import NotFoundError
+from opensearchpy.exceptions import NotFoundError, RequestError
 
 from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
-from tim.errors import AliasNotFoundError, IndexNotFoundError
+from tim.errors import AliasNotFoundError, IndexExistsError, IndexNotFoundError
 
 from .conftest import my_vcr
 
@@ -223,9 +223,23 @@ def test_get_all_aliased_indexes_for_source_multi_source_indexes_with_alias_logs
 # Index functions
 
 
-@my_vcr.use_cassette("create_index.yaml")
-def test_create_index(test_opensearch_client):
+@my_vcr.use_cassette("opensearch/create_index_success.yaml")
+def test_create_index_success(test_opensearch_client):
     assert tim_os.create_index(test_opensearch_client, "test-index") == "test-index"
+
+
+@my_vcr.use_cassette("opensearch/create_index_exists.yaml")
+@freeze_time("2022-09-01")
+def test_create_index_exists_raises_error(test_opensearch_client):
+    with pytest.raises(IndexExistsError):
+        tim_os.create_index(test_opensearch_client, "aspace-2022-09-01t00-00-00")
+
+
+@my_vcr.use_cassette("opensearch/create_index_other_error.yaml")
+@freeze_time("2022-09-01")
+def test_create_index_other_error_reraises(test_opensearch_client):
+    with pytest.raises(RequestError):
+        tim_os.create_index(test_opensearch_client, "aspace-2022-09-01t00-00-00")
 
 
 @my_vcr.use_cassette("delete_index.yaml")
@@ -430,7 +444,7 @@ def test_remove_alias_unexpected_error_reraises(test_opensearch_client):
 # Record functions
 
 
-@my_vcr.use_cassette("bulk_index_create_records.yaml")
+@my_vcr.use_cassette("opensearch/bulk_index_create_records.yaml")
 def test_bulk_index_creates_records(test_opensearch_client):
     records = helpers.parse_records("tests/fixtures/sample_records.json")
     assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
@@ -441,7 +455,7 @@ def test_bulk_index_creates_records(test_opensearch_client):
     }
 
 
-@my_vcr.use_cassette("bulk_index_update_records.yaml")
+@my_vcr.use_cassette("opensearch/bulk_index_update_records.yaml")
 def test_bulk_index_updates_records(caplog, monkeypatch, test_opensearch_client):
     monkeypatch.setenv("STATUS_UPDATE_INTERVAL", "5")
     records = helpers.parse_records("tests/fixtures/sample_records.json")
@@ -454,7 +468,7 @@ def test_bulk_index_updates_records(caplog, monkeypatch, test_opensearch_client)
     assert "Status update: 5 records indexed so far!" in caplog.text
 
 
-@my_vcr.use_cassette("bulk_index_record_with_errors.yaml")
+@my_vcr.use_cassette("opensearch/bulk_index_record_with_errors.yaml")
 def test_bulk_index_logs_errors(caplog, test_opensearch_client):
     records = helpers.parse_records("tests/fixtures/sample_record_with_errors.json")
     assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
@@ -466,12 +480,8 @@ def test_bulk_index_logs_errors(caplog, test_opensearch_client):
     assert "Error indexing record 'mit:alma:990026671500206761'" in caplog.text
 
 
-@mock.patch("tim.opensearch.streaming_bulk")
-@my_vcr.use_cassette("bulk_index_record_with_errors.yaml")
-def test_bulk_index_weird_response_logs_errors(
-    mock_streaming_bulk, caplog, test_opensearch_client
-):
-    mock_streaming_bulk.return_value = [(True, {"index": {"result": "surprise!"}})]
+@my_vcr.use_cassette("opensearch/bulk_index_record_weird_response.yaml")
+def test_bulk_index_weird_response_logs_errors(caplog, test_opensearch_client):
     records = helpers.parse_records("tests/fixtures/sample_record_with_errors.json")
     assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
         "created": 0,
@@ -481,5 +491,8 @@ def test_bulk_index_weird_response_logs_errors(
     }
     assert (
         "Something unexpected happened during ingest. Bulk index response: "
-        '[true, {"index": {"result": "surprise!"}}]' in caplog.text
+        '[true, {"index": {"_index": "test-index", "_type": "_doc", '
+        '"_id": "mit:alma:990026671500206761", "_version": 2, "result": "surprise!", '
+        '"_shards": {"total": 2, "successful": 1, "failed": 0}, "_seq_no": 6, '
+        '"_primary_term": 1, "status": 200}}]' in caplog.text
     )
