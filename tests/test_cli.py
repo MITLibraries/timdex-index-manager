@@ -1,8 +1,16 @@
+import re
+
 from freezegun import freeze_time
 
 from tim.cli import main
 
 from .conftest import my_vcr
+
+
+def escape_ansi(line):
+    """Escape ANSI color codes that are added to CLI output by rich-click."""
+    ansi_escape = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
+    return ansi_escape.sub("", line)
 
 
 @my_vcr.use_cassette("ping_localhost.yaml")
@@ -75,7 +83,7 @@ def test_create_index_name_and_source_passed(runner):
     assert result.exit_code == 2
     assert (
         "Only one of --index and --source options is allowed, not both."
-        in result.stdout
+        in escape_ansi(result.stdout)
     )
 
 
@@ -198,7 +206,7 @@ def test_bulk_index_index_and_source_passed(runner):
     assert result.exit_code == 2
     assert (
         "Only one of --index and --source options is allowed, not both."
-        in result.stdout
+        in escape_ansi(result.stdout)
     )
 
 
