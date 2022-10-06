@@ -18,19 +18,18 @@
     "default": {
         "boto3": {
             "hashes": [
-                "sha256:6194763348545bb1669ce8d03ba104be1ba822daa184613aa10b9303a6a79017",
-                "sha256:be151711bbb4db53e85dd5bbe506002ce6f2f21fc4e45fcf6d2cf356d32cc4c6"
+                "sha256:bcc579e801774cb2c7dda87ff985feda1ae7e10591d11ef37526363139138bd4"
             ],
             "index": "pypi",
-            "version": "==1.24.84"
+            "version": "==1.24.87"
         },
         "botocore": {
             "hashes": [
-                "sha256:11f05d2acdf9a5f722856704b7b951b180647fb4340e1b5048b27273dc323909",
-                "sha256:da15026329706caf83323d84996f5ff5c527837347633fca9b3b1be0efa60841"
+                "sha256:216de9751116d0d1cc3901e26d95a5c9a30ecb6973ae6147af1cf504858d845a",
+                "sha256:c4cbd22056ace4c7aa99e62e8ae629865ab80cc8bbf7c6d68ccf0f768f0034b6"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==1.27.84"
+            "version": "==1.27.87"
         },
         "certifi": {
             "hashes": [
@@ -235,7 +234,7 @@
                 "sha256:3fa96cf423e6987997fc326ae8df396db2a8b7c667747d47ddd8ecba91f4a74e",
                 "sha256:b930dd878d5a8afb066a637fbb35144fe7901e3b209d1cd4f524bd0e9deee997"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5' and python_version < '4'",
+            "markers": "python_version >= '3.6'",
             "version": "==1.26.12"
         }
     },
@@ -843,7 +842,7 @@
                 "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc",
                 "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"
             ],
-            "markers": "python_version < '3.11'",
+            "markers": "python_full_version < '3.11.0a7'",
             "version": "==2.0.1"
         },
         "tomlkit": {
@@ -867,7 +866,7 @@
                 "sha256:3fa96cf423e6987997fc326ae8df396db2a8b7c667747d47ddd8ecba91f4a74e",
                 "sha256:b930dd878d5a8afb066a637fbb35144fe7901e3b209d1cd4f524bd0e9deee997"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5' and python_version < '4'",
+            "markers": "python_version >= '3.6'",
             "version": "==1.26.12"
         },
         "vcrpy": {
