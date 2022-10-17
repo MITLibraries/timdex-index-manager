@@ -6,7 +6,7 @@ import sentry_sdk
 
 PRIMARY_ALIAS = "all-current"
 VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
-VALID_SOURCES = ["aspace", "dspace", "jpal", "whoas", "zenodo"]
+VALID_SOURCES = ["alma", "aspace", "dspace", "jpal", "whoas", "zenodo"]
 
 
 def configure_index_settings() -> tuple:
