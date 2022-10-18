@@ -9,10 +9,10 @@ TIMDEX! Index Manager (TIM) is a Python cli application for managing TIMDEX inde
 ## Optional ENV
 
 - `AWS_REGION` = Only needed if AWS region changes from the default of us-east-1.
-- `OPENSEARCH_ENDPOINT` = If using a local Docker OpenSearch instance, this isn't needed. Otherwise set to OpenSearch instance endpoint _without_ the http scheme, e.g. `search-timdex-env-1234567890.us-east-1.es.amazonaws.com`. Can also be passed directly to the CLI via the `--url` option.
 - `OPENSEARCH_REQUEST_TIMEOUT` = Only used for OpenSearch requests that tend to take longer than the default timeout of 10 seconds, such as bulk or index refresh requests. Defaults to 30 seconds if not set.
 - `SENTRY_DSN` = If set to a valid Sentry DSN, enables Sentry exception monitoring. This is not needed for local development.
 - `STATUS_UPDATE_INTERVAL` = The ingest process logs the # of records indexed every nth record (1000 by default). Set this env variable to any integer to change the frequency of logging status updates. Can be useful for development/debugging.
+- `TIMDEX_OPENSEARCH_ENDPOINT` = If using a local Docker OpenSearch instance, this isn't needed. Otherwise set to OpenSearch instance endpoint _without_ the http scheme, e.g. `search-timdex-env-1234567890.us-east-1.es.amazonaws.com`. Can also be passed directly to the CLI via the `--url` option.
 
 ## Development
 
@@ -37,5 +37,5 @@ To confirm the instance is up, run `pipenv run tim -u localhost ping`.
 ### OpenSearch on AWS
 
 1. Ensure that you have the correct AWS credentials set for the Dev1 (or desired) account.
-2. Set the `OPENSEARCH_ENDPOINT` variable in your .env to match the Dev1 (or desired) TIMDEX OpenSearch endpoint (note: do not include the http scheme prefix).
+2. Set the `TIMDEX_OPENSEARCH_ENDPOINT` variable in your .env to match the Dev1 (or desired) TIMDEX OpenSearch endpoint (note: do not include the http scheme prefix).
 3. Run `pipenv run tim ping` to confirm the client is connected to the expected TIMDEX OpenSearch instance.

@@ -17,7 +17,7 @@ def escape_ansi(line):
 def test_main_group_no_options_configures_correctly_and_invokes_result_callback(
     caplog, monkeypatch, runner
 ):
-    monkeypatch.delenv("OPENSEARCH_ENDPOINT", raising=False)
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
     result = runner.invoke(main, ["ping"])
     assert result.exit_code == 0
     assert "Logger 'root' configured with level=INFO" in caplog.text
@@ -29,7 +29,7 @@ def test_main_group_no_options_configures_correctly_and_invokes_result_callback(
 def test_main_group_all_options_configures_correctly_and_invokes_result_callback(
     caplog, monkeypatch, runner
 ):
-    monkeypatch.delenv("OPENSEARCH_ENDPOINT", raising=False)
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
     result = runner.invoke(main, ["--verbose", "--url", "localhost", "ping"])
     assert result.exit_code == 0
     assert "Logger 'root' configured with level=DEBUG" in caplog.text
