@@ -36,12 +36,12 @@ click.rich_click.COMMAND_GROUPS = {
 @click.option(
     "-u",
     "--url",
-    envvar="OPENSEARCH_ENDPOINT",
+    envvar="TIMDEX_OPENSEARCH_ENDPOINT",
     default="localhost",
     help="The OpenSearch instance endpoint minus the http scheme, e.g. "
     "'search-timdex-env-1234567890.us-east-1.es.amazonaws.com'. If not provided, will "
-    "attempt to get from the OPENSEARCH_ENDPOINT environment variable. Defaults to "
-    "'localhost'.",
+    "attempt to get from the TIMDEX_OPENSEARCH_ENDPOINT environment variable. Defaults "
+    "to 'localhost'.",
 )
 @click.option(
     "-v", "--verbose", is_flag=True, help="Pass to log at debug level instead of info"

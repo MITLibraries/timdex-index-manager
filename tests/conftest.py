@@ -18,7 +18,7 @@ def test_env():
         "AWS_ACCESS_KEY_ID": "test",
         "AWS_SECRET_ACCESS_KEY": "test",
         "AWS_SESSION_TOKEN": "test",
-        "OPENSEARCH_ENDPOINT": "localhost",
+        "TIMDEX_OPENSEARCH_ENDPOINT": "localhost",
         "SENTRY_DSN": None,
         "WORKSPACE": "test",
     }
