@@ -45,4 +45,4 @@ def configure_sentry() -> str:
 
 
 def opensearch_request_timeout() -> int:
-    return int(os.getenv("OPENSEARCH_REQUEST_TIMEOUT", "30"))
+    return int(os.getenv("OPENSEARCH_REQUEST_TIMEOUT", "120"))
