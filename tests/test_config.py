@@ -48,7 +48,7 @@ def test_configure_sentry_env_variable_is_dsn(monkeypatch):
 
 def test_opensearch_request_timeout_default(monkeypatch):
     monkeypatch.delenv("OPENSEARCH_REQUEST_TIMEOUT", raising=False)
-    assert opensearch_request_timeout() == 30
+    assert opensearch_request_timeout() == 120
 
 
 def test_opensearch_request_timeout_from_env(monkeypatch):
