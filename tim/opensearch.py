@@ -12,7 +12,7 @@ from tim import helpers
 from tim.config import (
     PRIMARY_ALIAS,
     configure_index_settings,
-    opensearch_request_timeout,
+    configure_opensearch_bulk_settings,
 )
 from tim.errors import AliasNotFoundError, IndexExistsError, IndexNotFoundError
 
@@ -315,14 +315,16 @@ def bulk_index(
     Returns total sums of: records created, records updated, errors, and total records
     processed.
     """
+    bulk_config = configure_opensearch_bulk_settings()
     result = {"created": 0, "updated": 0, "errors": 0, "total": 0}
     actions = helpers.generate_bulk_actions(index, records, "index")
     responses = streaming_bulk(
         client,
         actions,
-        max_retries=3,
+        max_chunk_bytes=bulk_config["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
+        max_retries=bulk_config["OPENSEARCH_BULK_MAX_RETRIES"],
         raise_on_error=False,
-        request_timeout=opensearch_request_timeout(),
+        request_timeout=bulk_config["OPENSEARCH_REQUEST_TIMEOUT"],
     )
     for response in responses:
         if response[0] is False:
@@ -347,7 +349,8 @@ def bulk_index(
             logger.info("Status update: %s records indexed so far!", result["total"])
     logger.info("All records ingested, refreshing index.")
     response = client.indices.refresh(
-        index=index, request_timeout=opensearch_request_timeout()
+        index=index,
+        request_timeout=bulk_config["OPENSEARCH_REQUEST_TIMEOUT"],
     )
     logger.debug(response)
     return result

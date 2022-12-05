@@ -1,10 +1,11 @@
 import logging
 
 from tim.config import (
+    OPENSEARCH_BULK_CONFIG_DEFAULTS,
     configure_index_settings,
     configure_logger,
+    configure_opensearch_bulk_settings,
     configure_sentry,
-    opensearch_request_timeout,
 )
 
 
@@ -28,6 +29,24 @@ def test_configure_logger_verbose():
     assert result == "Logger 'tests.test_config' configured with level=DEBUG"
 
 
+def test_configure_opensearch_bulk_settings_from_env(monkeypatch):
+    monkeypatch.setenv("OPENSEARCH_BULK_MAX_CHUNK_BYTES", "10")
+    monkeypatch.setenv("OPENSEARCH_BULK_MAX_RETRIES", "2")
+    monkeypatch.setenv("OPENSEARCH_REQUEST_TIMEOUT", "20")
+    assert configure_opensearch_bulk_settings() == {
+        "OPENSEARCH_BULK_MAX_CHUNK_BYTES": 10,
+        "OPENSEARCH_BULK_MAX_RETRIES": 2,
+        "OPENSEARCH_REQUEST_TIMEOUT": 20,
+    }
+
+
+def test_configure_opensearch_bulk_settings_uses_defaults(monkeypatch):
+    monkeypatch.delenv("OPENSEARCH_BULK_MAX_CHUNK_BYTES", raising=False)
+    monkeypatch.delenv("OPENSEARCH_BULK_MAX_RETRIES", raising=False)
+    monkeypatch.delenv("OPENSEARCH_REQUEST_TIMEOUT", raising=False)
+    assert configure_opensearch_bulk_settings() == OPENSEARCH_BULK_CONFIG_DEFAULTS
+
+
 def test_configure_sentry_no_env_variable(monkeypatch):
     monkeypatch.delenv("SENTRY_DSN", raising=False)
     result = configure_sentry()
@@ -44,13 +63,3 @@ def test_configure_sentry_env_variable_is_dsn(monkeypatch):
     monkeypatch.setenv("SENTRY_DSN", "https://1234567890@00000.ingest.sentry.io/123456")
     result = configure_sentry()
     assert result == "Sentry DSN found, exceptions will be sent to Sentry with env=test"
-
-
-def test_opensearch_request_timeout_default(monkeypatch):
-    monkeypatch.delenv("OPENSEARCH_REQUEST_TIMEOUT", raising=False)
-    assert opensearch_request_timeout() == 120
-
-
-def test_opensearch_request_timeout_from_env(monkeypatch):
-    monkeypatch.setenv("OPENSEARCH_REQUEST_TIMEOUT", "5")
-    assert opensearch_request_timeout() == 5
