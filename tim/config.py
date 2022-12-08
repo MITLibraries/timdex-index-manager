@@ -4,6 +4,11 @@ import os
 
 import sentry_sdk
 
+OPENSEARCH_BULK_CONFIG_DEFAULTS = {
+    "OPENSEARCH_BULK_MAX_CHUNK_BYTES": 100 * 1024 * 1024,
+    "OPENSEARCH_BULK_MAX_RETRIES": 8,
+    "OPENSEARCH_REQUEST_TIMEOUT": 120,
+}
 PRIMARY_ALIAS = "all-current"
 VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
 VALID_SOURCES = ["alma", "aspace", "dspace", "jpal", "whoas", "zenodo"]
@@ -35,6 +40,13 @@ def configure_logger(logger: logging.Logger, verbose: bool) -> str:
     )
 
 
+def configure_opensearch_bulk_settings() -> dict[str, int]:
+    result = {}
+    for key, value in OPENSEARCH_BULK_CONFIG_DEFAULTS.items():
+        result[key] = int(os.getenv(key) or value)
+    return result
+
+
 def configure_sentry() -> str:
     env = os.getenv("WORKSPACE")
     sentry_dsn = os.getenv("SENTRY_DSN")
@@ -42,7 +54,3 @@ def configure_sentry() -> str:
         sentry_sdk.init(sentry_dsn, environment=env)
         return f"Sentry DSN found, exceptions will be sent to Sentry with env={env}"
     return "No Sentry DSN found, exceptions will not be sent to Sentry"
-
-
-def opensearch_request_timeout() -> int:
-    return int(os.getenv("OPENSEARCH_REQUEST_TIMEOUT", "120"))
