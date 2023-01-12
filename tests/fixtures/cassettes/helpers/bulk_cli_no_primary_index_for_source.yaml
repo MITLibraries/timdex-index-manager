@@ -5,15 +5,15 @@ interactions:
       content-type:
       - application/json
       user-agent:
-      - opensearch-py/2.0.0 (Python 3.10.6)
+      - opensearch-py/2.0.1 (Python 3.10.8)
     method: GET
     uri: http://localhost:9200/_cat/aliases?format=json
   response:
     body:
-      string: '[]'
+      string: '[{"alias":"all-current","index":"alma-2022-09-01t00-00-00","filter":"-","routing.index":"-","routing.search":"-","is_write_index":"-"}]'
     headers:
       content-length:
-      - '2'
+      - '135'
       content-type:
       - application/json; charset=UTF-8
     status:

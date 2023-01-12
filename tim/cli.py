@@ -23,7 +23,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Bulk record processing commands",
-            "commands": ["bulk-index"],
+            "commands": ["bulk-index", "bulk-delete"],
         },
     ]
 }
@@ -289,35 +289,66 @@ def bulk_index(
     FILEPATH: path to transformed records file, use format "s3://bucketname/objectname"
     for s3.
     """
-    options = [index, source]
-    if all(options):
-        raise click.UsageError(
-            "Only one of --index and --source options is allowed, not both."
-        )
-    if not any(options):
-        raise click.UsageError(
-            "Must provide either an existing index name or a valid source."
-        )
     client = ctx.obj["CLIENT"]
-    if index and not client.indices.exists(index):
-        raise click.BadParameter(f"Index '{index}' does not exist in the cluster.")
-    if source:
-        index = tim_os.get_primary_index_for_source(client, source)
-    if not index:
-        raise click.BadParameter(
-            "No index name was passed and there is no primary-aliased index for "
-            f"source '{source}'."
-        )
+    index = helpers.validate_bulk_cli_options(index, source, client)
 
     logger.info("Bulk indexing records from file '%s' into index '%s'", filepath, index)
     record_iterator = helpers.parse_records(filepath)
     results = tim_os.bulk_index(client, index, record_iterator)
     logger.info(
-        "Bulk indexing complete!\n   Errors: %d%s"
-        "\n  Created: %d\n  Updated: %d\n  --------\n    Total: %d",
+        "Bulk indexing complete!\n"
+        "   Errors: %d%s\n"
+        "  Created: %d\n"
+        "  Updated: %d\n"
+        "  --------\n"
+        "    Total: %d",
         results["errors"],
         " (see logs for details)" if results["errors"] else "",
         results["created"],
         results["updated"],
+        results["total"],
+    )
+
+
+@main.command()
+@click.option("-i", "--index", help="Name of the index to bulk delete records from.")
+@click.option(
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help="Source whose primary-aliased index to bulk delete records from.",
+)
+@click.argument("filepath", type=click.Path())
+@click.pass_context
+def bulk_delete(
+    ctx: click.Context, index: Optional[str], source: Optional[str], filepath: str
+) -> None:
+    """
+    Bulk delete records from an index.
+
+    Must provide either the name of an existing index in the cluster or a valid source.
+    If source is provided, will delete records from the primary-aliased index for the
+    source.
+
+    Logs an error and aborts if the provided index doesn't exist in the cluster.
+
+    FILEPATH: path to deleted records file, use format "s3://bucketname/objectname"
+    for s3.
+    """
+    client = ctx.obj["CLIENT"]
+    index = helpers.validate_bulk_cli_options(index, source, client)
+
+    logger.info("Bulk deleting records in file '%s' from index '%s'", filepath, index)
+    record_iterator = helpers.parse_deleted_records(filepath)
+    results = tim_os.bulk_delete(client, index, record_iterator)
+    logger.info(
+        "Bulk deletion complete!\n"
+        "   Errors: %d%s\n"
+        "  Deleted: %d\n"
+        " --------\n"
+        "    Total: %d",
+        results["errors"],
+        " (see logs for details)" if results["errors"] else "",
+        results["deleted"],
         results["total"],
     )

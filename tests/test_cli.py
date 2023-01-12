@@ -183,53 +183,6 @@ def test_promote_index(caplog, runner):
 # Test bulk record processing commands
 
 
-def test_bulk_index_neither_index_nor_source_passed(runner):
-    result = runner.invoke(main, ["bulk-index", "tests/fixtures/sample_records.json"])
-    assert result.exit_code == 2
-    assert (
-        "Must provide either an existing index name or a valid source." in result.stdout
-    )
-
-
-def test_bulk_index_index_and_source_passed(runner):
-    result = runner.invoke(
-        main,
-        [
-            "bulk-index",
-            "-i",
-            "dspace-2022-09-01t00-00-00",
-            "-s",
-            "dspace",
-            "tests/fixtures/sample_records.json",
-        ],
-    )
-    assert result.exit_code == 2
-    assert (
-        "Only one of --index and --source options is allowed, not both."
-        in escape_ansi(result.stdout)
-    )
-
-
-@my_vcr.use_cassette("cli/bulk_index_nonexistent_index.yaml")
-def test_bulk_index_nonexistent_index_passed(runner):
-    result = runner.invoke(
-        main,
-        ["bulk-index", "--index", "wrong", "tests/fixtures/sample_records.json"],
-    )
-    assert result.exit_code == 2
-    assert "Index 'wrong' does not exist in the cluster." in result.stdout
-
-
-@my_vcr.use_cassette("cli/bulk_index_no_primary_index_for_source.yaml")
-def test_bulk_index_no_primary_index_for_source(runner):
-    result = runner.invoke(
-        main,
-        ["bulk-index", "-s", "dspace", "tests/fixtures/sample_records.json"],
-    )
-    assert result.exit_code == 2
-    assert "No index name was passed" in result.stdout
-
-
 @freeze_time("2022-09-01")
 @my_vcr.use_cassette("cli/bulk_index_with_index_name_success.yaml")
 def test_bulk_index_with_index_name_success(caplog, runner):
@@ -263,3 +216,43 @@ def test_bulk_index_with_source_success(caplog, runner):
         "index 'dspace-2022-09-01t00-00-00'" in caplog.text
     )
     assert "Bulk indexing complete!" in caplog.text
+
+
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("cli/bulk_delete_with_index_name_success.yaml")
+def test_bulk_delete_with_index_name_success(caplog, runner):
+    result = runner.invoke(
+        main,
+        [
+            "bulk-delete",
+            "--index",
+            "alma-2022-09-01t00-00-00",
+            "tests/fixtures/sample_deleted_records.txt",
+        ],
+    )
+    assert result.exit_code == 0
+    assert (
+        "Bulk deleting records in file 'tests/fixtures/sample_deleted_records.txt' "
+        "from index 'alma-2022-09-01t00-00-00'" in caplog.text
+    )
+    assert "Bulk deletion complete!" in caplog.text
+
+
+@freeze_time("2022-09-01")
+@my_vcr.use_cassette("cli/bulk_delete_with_source_success.yaml")
+def test_bulk_delete_with_source_success(caplog, runner):
+    result = runner.invoke(
+        main,
+        [
+            "bulk-delete",
+            "--source",
+            "alma",
+            "tests/fixtures/sample_deleted_records.txt",
+        ],
+    )
+    assert result.exit_code == 0
+    assert (
+        "Bulk deleting records in file 'tests/fixtures/sample_deleted_records.txt' "
+        "from index 'alma-2022-09-01t00-00-00'" in caplog.text
+    )
+    assert "Bulk deletion complete!" in caplog.text

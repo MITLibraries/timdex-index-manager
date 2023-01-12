@@ -496,3 +496,56 @@ def test_bulk_index_weird_response_logs_errors(caplog, test_opensearch_client):
         '"_shards": {"total": 2, "successful": 1, "failed": 0}, "_seq_no": 6, '
         '"_primary_term": 1, "status": 200}}]' in caplog.text
     )
+
+
+@my_vcr.use_cassette("opensearch/bulk_delete_records.yaml")
+def test_bulk_delete_deletes_records(caplog, monkeypatch, test_opensearch_client):
+    monkeypatch.setenv("STATUS_UPDATE_INTERVAL", "3")
+    records = helpers.parse_deleted_records("tests/fixtures/sample_deleted_records.txt")
+    assert tim_os.bulk_delete(
+        test_opensearch_client, "alma-2022-09-01t00-00-00", records
+    ) == {
+        "deleted": 3,
+        "errors": 0,
+        "total": 3,
+    }
+    assert "Status update: 3 records deleted so far!" in caplog.text
+
+
+@my_vcr.use_cassette("opensearch/bulk_delete_record_not_found.yaml")
+def test_bulk_delete_logs_error_if_record_not_found(caplog, test_opensearch_client):
+    records = helpers.parse_deleted_records(
+        "tests/fixtures/sample_deleted_record_not_present.txt"
+    )
+    assert tim_os.bulk_delete(
+        test_opensearch_client, "alma-2022-09-01t00-00-00", records
+    ) == {
+        "deleted": 0,
+        "errors": 1,
+        "total": 1,
+    }
+    assert (
+        "Record to delete 'no-record-here' was not found in index "
+        "'alma-2022-09-01t00-00-00'" in caplog.text
+    )
+
+
+@my_vcr.use_cassette("opensearch/bulk_delete_record_weird_response.yaml")
+def test_bulk_delete_weird_response_logs_errors(caplog, test_opensearch_client):
+    records = helpers.parse_deleted_records(
+        "tests/fixtures/sample_deleted_record_not_present.txt"
+    )
+    assert tim_os.bulk_delete(
+        test_opensearch_client, "alma-2022-09-01t00-00-00", records
+    ) == {
+        "deleted": 0,
+        "errors": 1,
+        "total": 1,
+    }
+    assert (
+        "Something unexpected happened during deletion. Bulk delete response: "
+        '[false, {"delete": {"_index": "alma-2022-09-01t00-00-00", "_type": "_doc", '
+        '"_id": "no-record-here", "_version": 1, "result": "surprise!", "_shards": '
+        '{"total": 2, "successful": 1, "failed": 0}, "_seq_no": 27, "_primary_term": '
+        '1, "status": 404}}]' in caplog.text
+    )

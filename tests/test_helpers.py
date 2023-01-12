@@ -1,8 +1,10 @@
 import pytest
-from click.exceptions import BadParameter
+from click.exceptions import BadParameter, UsageError
 from freezegun import freeze_time
 
 from tim import helpers
+
+from .conftest import my_vcr
 
 
 def test_confirm_action_yes(monkeypatch):
@@ -39,6 +41,16 @@ def test_generate_bulk_actions():
     }
 
 
+def test_generate_bulk_actions_delete():
+    records = [{"timdex_record_id": "12345"}]
+    actions = helpers.generate_bulk_actions("test-index", records, "delete")
+    assert next(actions) == {
+        "_op_type": "delete",
+        "_index": "test-index",
+        "_id": "12345",
+    }
+
+
 def test_generate_bulk_actions_invalid_action_raises_error():
     records = [{"timdex_record_id": "12345", "other_fields": "some_data"}]
     actions = helpers.generate_bulk_actions("test-index", records, "wrong")
@@ -59,6 +71,51 @@ def test_parse_records():
     records = list(helpers.parse_records("tests/fixtures/sample_records.json"))
     assert len(records) == 6
     assert isinstance(records[0], dict)
+
+
+def test_parse_deleted_records():
+    records = list(
+        helpers.parse_deleted_records("tests/fixtures/sample_deleted_records.txt")
+    )
+    assert len(records) == 3
+    assert isinstance(records[0], dict)
+
+
+def test_validate_bulk_cli_options_neither_index_nor_source_passed(
+    test_opensearch_client,
+):
+    with pytest.raises(UsageError) as error:
+        helpers.validate_bulk_cli_options(None, None, test_opensearch_client)
+    assert "Must provide either an existing index name or a valid source." == str(
+        error.value
+    )
+
+
+def test_validate_bulk_cli_options_index_and_source_passed(test_opensearch_client):
+    with pytest.raises(UsageError) as error:
+        helpers.validate_bulk_cli_options(
+            "index-name", "source-name", test_opensearch_client
+        )
+    assert "Only one of --index and --source options is allowed, not both." == str(
+        error.value
+    )
+
+
+@my_vcr.use_cassette("helpers/bulk_cli_nonexistent_index.yaml")
+def test_validate_bulk_cli_options_nonexistent_index_passed(test_opensearch_client):
+    with pytest.raises(BadParameter) as error:
+        helpers.validate_bulk_cli_options("wrong", None, test_opensearch_client)
+    assert "Index 'wrong' does not exist in the cluster." == str(error.value)
+
+
+@my_vcr.use_cassette("helpers/bulk_cli_no_primary_index_for_source.yaml")
+def test_validate_bulk_cli_options_no_primary_index_for_source(test_opensearch_client):
+    with pytest.raises(BadParameter) as error:
+        helpers.validate_bulk_cli_options(None, "dspace", test_opensearch_client)
+    assert (
+        "No index name was passed and there is no primary-aliased index for source "
+        "'dspace'." == str(error.value)
+    )
 
 
 def test_validate_index_name_no_value():
