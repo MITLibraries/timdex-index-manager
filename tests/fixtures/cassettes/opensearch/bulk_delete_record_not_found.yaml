@@ -1,0 +1,48 @@
+interactions:
+- request:
+    body: '{"delete":{"_id":"no-record-here","_index":"alma-2022-09-01t00-00-00"}}
+
+      '
+    headers:
+      Content-Length:
+      - '72'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.1 (Python 3.10.8)
+    method: POST
+    uri: http://localhost:9200/_bulk
+  response:
+    body:
+      string: '{"took":5,"errors":false,"items":[{"delete":{"_index":"alma-2022-09-01t00-00-00","_type":"_doc","_id":"no-record-here","_version":1,"result":"not_found","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":27,"_primary_term":1,"status":404}}]}'
+    headers:
+      content-length:
+      - '248'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Content-Length:
+      - '0'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.0.1 (Python 3.10.8)
+    method: POST
+    uri: http://localhost:9200/alma-2022-09-01t00-00-00/_refresh
+  response:
+    body:
+      string: '{"_shards":{"total":2,"successful":1,"failed":0}}'
+    headers:
+      content-length:
+      - '49'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+version: 1

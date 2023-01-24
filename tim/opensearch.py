@@ -307,6 +307,53 @@ def remove_alias(client: OpenSearch, index: str, alias: str) -> None:
 # Record functions
 
 
+def bulk_delete(
+    client: OpenSearch, index: str, records: Iterator[dict]
+) -> dict[str, int]:
+    """Delete records from an existing index using the streaming bulk helper.
+
+    If an error occurs during record deletion, it will be logged and bulk deletion will
+    continue until all records have been processed.
+
+    Returns total sums of: records deleted, errors, and total records processed.
+    """
+    result = {"deleted": 0, "errors": 0, "total": 0}
+    actions = helpers.generate_bulk_actions(index, records, "delete")
+    responses = streaming_bulk(
+        client,
+        actions,
+        max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
+        raise_on_error=False,
+    )
+    for response in responses:
+        logger.debug(response)
+        if response[1]["delete"].get("result") == "not_found":
+            logger.error(
+                "Record to delete '%s' was not found in index '%s'.",
+                response[1]["delete"]["_id"],
+                index,
+            )
+            result["errors"] += 1
+        elif response[1]["delete"].get("result") == "deleted":
+            result["deleted"] += 1
+        else:
+            logger.error(
+                "Something unexpected happened during deletion. Bulk delete response: "
+                "%s",
+                json.dumps(response),
+            )
+            result["errors"] += 1
+        result["total"] += 1
+        if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
+            logger.info("Status update: %s records deleted so far!", result["total"])
+    logger.info("All records deleted, refreshing index.")
+    response = client.indices.refresh(
+        index=index,
+    )
+    logger.debug(response)
+    return result
+
+
 def bulk_index(
     client: OpenSearch, index: str, records: Iterator[dict]
 ) -> dict[str, int]:

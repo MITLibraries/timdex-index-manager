@@ -5,6 +5,7 @@ import click
 import ijson
 import smart_open
 
+from tim import opensearch as tim_os
 from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
 
 
@@ -49,8 +50,9 @@ def generate_bulk_actions(
             "_op_type": action,
             "_index": index,
             "_id": record["timdex_record_id"],
-            "_source": record,
         }
+        if action != "delete":
+            doc["_source"] = record
         yield doc
 
 
@@ -67,6 +69,41 @@ def parse_records(filepath: str) -> Generator[dict, None, None]:
     with smart_open.open(filepath, "rb") as json_input:
         for item in ijson.items(json_input, "item"):
             yield item
+
+
+def parse_deleted_records(filepath: str) -> Generator[dict, None, None]:
+    """Open an input file, iterate through it and yield one deleted record at a time.
+
+    This function expects that the input file contains a list of TIMDEX record IDs, one
+    per line in the file.
+    """
+    with smart_open.open(filepath, "r") as file_input:
+        for item in file_input.readlines():
+            yield {"timdex_record_id": item.rstrip()}
+
+
+def validate_bulk_cli_options(
+    index: Optional[str], source: Optional[str], client: tim_os.OpenSearch
+) -> str:
+    options = [index, source]
+    if all(options):
+        raise click.UsageError(
+            "Only one of --index and --source options is allowed, not both."
+        )
+    if not any(options):
+        raise click.UsageError(
+            "Must provide either an existing index name or a valid source."
+        )
+    if index and not client.indices.exists(index):
+        raise click.BadParameter(f"Index '{index}' does not exist in the cluster.")
+    if source:
+        index = tim_os.get_primary_index_for_source(client, source)
+    if not index:
+        raise click.BadParameter(
+            "No index name was passed and there is no primary-aliased index for "
+            f"source '{source}'."
+        )
+    return index
 
 
 def validate_index_name(
