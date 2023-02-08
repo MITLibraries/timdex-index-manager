@@ -32,7 +32,7 @@ click.rich_click.COMMAND_GROUPS = {
 # Main command group
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "-u",
     "--url",
