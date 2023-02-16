@@ -352,3 +352,20 @@ def bulk_delete(
         results["deleted"],
         results["total"],
     )
+
+
+@main.command()
+@click.pass_context
+def console(ctx: click.Context) -> None:
+    """Open a debug console where you can run arbitrary commands.
+
+    You will have a `client` and can run commands such as dir(client) to
+    understand what methods are available. Another example is to list all
+    shards via `client.cat.shards('all-current')`.
+
+    This is meant for interactive development and debugging work, not as a
+    replacement for building out essential tim_os features.
+    """
+    client = ctx.obj["CLIENT"]
+    click.echo("Entering debug console. Exit by typing `c` then `enter`")
+    tim_os.console(client)

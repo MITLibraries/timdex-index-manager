@@ -407,3 +407,19 @@ def bulk_index(
     )
     logger.debug(response)
     return result
+
+# Debug Console functions
+
+
+def console(client: OpenSearch) -> None:
+    """Open a debug console where you can run arbitrary commands.
+
+    This is useful as tim_os handles the aws connection information to simplify
+    the process of credentialling in the event we need to use features not yet
+    built into tim_os.
+    """
+    logger.debug("Entering debug mode with client '%s'", client)
+
+    import pdb
+
+    pdb.set_trace()
