@@ -117,6 +117,8 @@ def get_formatted_indexes(client: OpenSearch) -> str:
                 f"  Primary store size: {info['pri.store.size']}\n"
                 f"  Total store size: {info['store.size']}\n"
                 f"  UUID: {info['uuid']}\n"
+                f"  Primary Shards: {int(info['pri']):,}\n"
+                f"  Replica Shards: {int(info['rep']):,}\n"
             )
         return output
     return output + " No indexes present in OpenSearch cluster."

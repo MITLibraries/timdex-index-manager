@@ -95,7 +95,7 @@ def indexes(ctx: click.Context) -> None:
 
     Prints all indexes in the cluster in alphabetical order by name. For each index,
     displays information including its status, health, number of documents, primary
-    store size, total store size, and UUID.
+    store size, total store size, UUID, primary shard count, and replica shard count.
     """
     click.echo(tim_os.get_formatted_indexes(ctx.obj["CLIENT"]))
 

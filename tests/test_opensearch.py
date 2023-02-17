@@ -125,6 +125,8 @@ def test_get_formatted_indexes(test_opensearch_client):
         "\n  Primary store size: 208b"
         "\n  Total store size: 208b"
         "\n  UUID: 60Gq-vaAScOKGXkG_JAw5A"
+        "\n  Primary Shards: 1"
+        "\n  Replica Shards: 1"
         "\n"
         "\nName: index-with-no-aliases"
         "\n  Aliases: None"
@@ -134,6 +136,8 @@ def test_get_formatted_indexes(test_opensearch_client):
         "\n  Primary store size: 208b"
         "\n  Total store size: 208b"
         "\n  UUID: KqVlOA5lTw-fXZA2TEqi_g"
+        "\n  Primary Shards: 1"
+        "\n  Replica Shards: 1"
         "\n"
         "\nName: index-with-one-alias"
         "\n  Aliases: alias-with-multiple-indexes"
@@ -143,6 +147,8 @@ def test_get_formatted_indexes(test_opensearch_client):
         "\n  Primary store size: 208b"
         "\n  Total store size: 208b"
         "\n  UUID: q-NKXPp3SuWiDKhPkUxP-g"
+        "\n  Primary Shards: 1"
+        "\n  Replica Shards: 1"
         "\n"
     )
 
