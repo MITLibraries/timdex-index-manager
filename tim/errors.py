@@ -8,6 +8,17 @@ class AliasNotFoundError(Exception):
         super().__init__(self.message)
 
 
+class BulkIndexingError(Exception):
+    """Exception raised when an unexpected error is returned during bulk indexing."""
+
+    def __init__(self, record: str, index: str, error: str) -> None:
+        """Initialize exception with provided index name and error for message."""
+        self.message = (
+            f"Error indexing record '{record}' into index '{index}'. Details: {error}"
+        )
+        super().__init__(self.message)
+
+
 class IndexExistsError(Exception):
     """Exception raised when attempting to create an index that is already present."""
 

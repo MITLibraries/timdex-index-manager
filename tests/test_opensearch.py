@@ -8,7 +8,12 @@ from opensearchpy.exceptions import NotFoundError, RequestError
 from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
-from tim.errors import AliasNotFoundError, IndexExistsError, IndexNotFoundError
+from tim.errors import (
+    AliasNotFoundError,
+    BulkIndexingError,
+    IndexExistsError,
+    IndexNotFoundError,
+)
 
 from .conftest import my_vcr
 
@@ -474,8 +479,8 @@ def test_bulk_index_updates_records(caplog, monkeypatch, test_opensearch_client)
     assert "Status update: 5 records indexed so far!" in caplog.text
 
 
-@my_vcr.use_cassette("opensearch/bulk_index_record_with_errors.yaml")
-def test_bulk_index_logs_errors(caplog, test_opensearch_client):
+@my_vcr.use_cassette("opensearch/bulk_index_record_mapper_parsing_error.yaml")
+def test_bulk_index_logs_mapper_parsing_errors(caplog, test_opensearch_client):
     records = helpers.parse_records("tests/fixtures/sample_record_with_errors.json")
     assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
         "created": 0,
@@ -484,6 +489,13 @@ def test_bulk_index_logs_errors(caplog, test_opensearch_client):
         "total": 1,
     }
     assert "Error indexing record 'mit:alma:990026671500206761'" in caplog.text
+
+
+@my_vcr.use_cassette("opensearch/bulk_index_record_other_error.yaml")
+def test_bulk_index_other_error_raises_exception(test_opensearch_client):
+    records = helpers.parse_records("tests/fixtures/sample_records.json")
+    with pytest.raises(BulkIndexingError):
+        tim_os.bulk_index(test_opensearch_client, "test-index", records)
 
 
 @my_vcr.use_cassette("opensearch/bulk_index_record_weird_response.yaml")
