@@ -3,8 +3,7 @@
         "alternate_titles": [
             {
                 "kind": "Alternate title",
-                "value": "Best of Paquito D'Rivera",
-                "not-a-subfield": "This shouldn't be here"
+                "value": "Best of Paquito D'Rivera"
             }
         ],
         "call_numbers": [
@@ -70,7 +69,7 @@
         "dates": [
             {
                 "kind": "Date of publication",
-                "value": "2008"
+                "value": "this isn't a date"
             }
         ],
         "identifiers": [

@@ -14,7 +14,12 @@ from tim.config import (
     configure_index_settings,
     configure_opensearch_bulk_settings,
 )
-from tim.errors import AliasNotFoundError, IndexExistsError, IndexNotFoundError
+from tim.errors import (
+    AliasNotFoundError,
+    BulkIndexingError,
+    IndexExistsError,
+    IndexNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -382,12 +387,17 @@ def bulk_index(
     )
     for response in responses:
         if response[0] is False:
-            logger.error(
-                "Error indexing record '%s'. Details: %s",
-                response[1]["index"]["_id"],
-                json.dumps(response[1]["index"]["error"]),
-            )
-            result["errors"] += 1
+            error = response[1]["index"]["error"]
+            record = response[1]["index"]["_id"]
+            if error["type"] == "mapper_parsing_exception":
+                logger.error(
+                    "Error indexing record '%s'. Details: %s",
+                    record,
+                    json.dumps(error),
+                )
+                result["errors"] += 1
+            else:
+                raise BulkIndexingError(record, index, json.dumps(error))
         elif response[1]["index"].get("result") == "created":
             result["created"] += 1
         elif response[1]["index"].get("result") == "updated":

@@ -31,8 +31,7 @@ Include links to Jira Software and/or Jira Service Management tickets here.
 
 ### Code Reviewer
 
-- [ ] The commit message is clear and follows our guidelines
-      (not just this pull request message)
+- [ ] The commit message is clear and follows our guidelines (not just this pull request message)
 - [ ] There are appropriate tests covering any new functionality
 - [ ] The documentation has been updated or is unnecessary
 - [ ] The changes have been verified

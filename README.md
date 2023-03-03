@@ -31,7 +31,7 @@ A local OpenSearch instance can be started for development purposes by running:
 ``` bash
 $ docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
   -e "plugins.security.disabled=true" \
-  opensearchproject/opensearch:1.3.3
+  opensearchproject/opensearch:2.3.0
 ```
 
 To confirm the instance is up, run `pipenv run tim -u localhost ping`.
