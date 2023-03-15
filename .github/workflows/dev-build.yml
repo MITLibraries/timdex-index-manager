@@ -1,19 +1,24 @@
 ### This is the Terraform-generated dev-build.yml workflow for the timdex-index-manager-dev app repository ###
-name: Dev Build and Deploy Fargate Container
+### If this is a Lambda repo, uncomment the FUNCTION line at the end of the document     ###
+### If the container requires any additional pre-build commands, uncomment and edit      ###
+### the PREBUILD line at the end of the document.                                        ###
+name: Dev Container Build and Deploy
 on:
   workflow_dispatch:
   pull_request:
     branches:
       - main
     paths-ignore:
-      - ".github/**"
+      - '.github/**'
 
 jobs:
   deploy:
-    name: Dev Deploy Fargate Container
-    uses: mitlibraries/.github/.github/workflows/fargate-shared-deploy-dev.yml@main
+    name: Dev Container Deploy
+    uses: mitlibraries/.github/.github/workflows/ecr-shared-deploy-dev.yml@main
     secrets: inherit
     with:
       AWS_REGION: "us-east-1"
       GHA_ROLE: "timdex-index-manager-gha-dev"
       ECR: "timdex-index-manager-dev"
+      # FUNCTION: ""
+      # PREBUILD: 
