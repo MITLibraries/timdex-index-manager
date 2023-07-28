@@ -11,7 +11,16 @@ OPENSEARCH_BULK_CONFIG_DEFAULTS = {
 }
 PRIMARY_ALIAS = "all-current"
 VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
-VALID_SOURCES = ["alma", "aspace", "dspace", "jpal", "whoas", "zenodo"]
+VALID_SOURCES = [
+    "alma",
+    "aspace",
+    "dspace",
+    "libguides",
+    "jpal",
+    "researchdatabases",
+    "whoas",
+    "zenodo",
+]
 
 
 def configure_index_settings() -> tuple:
