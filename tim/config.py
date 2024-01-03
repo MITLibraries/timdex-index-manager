@@ -15,6 +15,8 @@ VALID_SOURCES = [
     "alma",
     "aspace",
     "dspace",
+    "gismit",
+    "gisogm",
     "libguides",
     "jpal",
     "researchdatabases",
