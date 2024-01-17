@@ -257,10 +257,9 @@
       },
       "locations": {
         "type": "nested",
-        "include_in_parent": "true",
         "properties": {
-          "geopoint": {
-            "type": "geo_point"
+          "geoshape": {
+            "type": "geo_shape"
           },
           "kind": {
             "type": "keyword",
