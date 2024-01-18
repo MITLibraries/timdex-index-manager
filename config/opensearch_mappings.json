@@ -259,8 +259,9 @@
         "type": "nested",
         "include_in_parent": "true",
         "properties": {
-          "geopoint": {
-            "type": "geo_point"
+          "geoshape": {
+            "type": "geo_shape",
+            "doc_values": "false"
           },
           "kind": {
             "type": "keyword",
