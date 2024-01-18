@@ -257,9 +257,11 @@
       },
       "locations": {
         "type": "nested",
+        "include_in_parent": "true",
         "properties": {
           "geoshape": {
-            "type": "geo_shape"
+            "type": "geo_shape",
+            "doc_values": "false"
           },
           "kind": {
             "type": "keyword",
