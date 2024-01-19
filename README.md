@@ -31,10 +31,26 @@ A local OpenSearch instance can be started for development purposes by running:
 ``` bash
 $ docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
   -e "plugins.security.disabled=true" \
-  opensearchproject/opensearch:2.3.0
+  opensearchproject/opensearch:2.11.1
 ```
 
 To confirm the instance is up, run `pipenv run tim -u localhost ping`.
+
+Alternately, you can use the included Docker Compose file to start an OpenSearch node along with an OpenSearch Dashboard. This should leave you with the same
+
+```bash
+docker pull opensearchproject/opensearch:latest
+docker pull opensearchproject/opensearch-dashboards:latest
+docker compose up
+```
+
+To confirm the instance is up, run `pipenv run tim -u localhost ping`.
+
+To access the Dashboard, access <http://localhost:5601>.
+
+DevTools is useful for writing/testing OpenSearch queries.
+
+Discover is useful for browsing data. An index pattern will be required to use this tool. Note: do not set a date filed (choose the option to skip selecting a date field). It detects a date field in our indexes but then crashes trying to use it. Once you skip the data select field, just enter an index or alias to pull patterns from and it will automatically be configured to work well enough for initial data exploration.
 
 ### OpenSearch on AWS
 

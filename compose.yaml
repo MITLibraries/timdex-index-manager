@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      - plugins.security.disabled=true
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - opensearch-local-data:/usr/share/opensearch/data
+    networks:
+      - opensearch-local-net
+  dashboard:
+    image: opensearchproject/opensearch-dashboards:latest
+    ports:
+      - "5601:5601"
+    environment:
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+    networks:
+      - opensearch-local-net
+volumes:
+  opensearch-local-data:
+
+networks:
+  opensearch-local-net:
