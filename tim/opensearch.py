@@ -34,7 +34,7 @@ def configure_opensearch_client(url: str) -> OpenSearch:
     Includes the appropriate AWS credentials configuration if the URL is not localhost.
     """
     logger.info("OpenSearch request configurations: %s", REQUEST_CONFIG)
-    if url == "localhost":
+    if url in ["localhost", "opensearch"]:
         return OpenSearch(
             hosts=[{"host": url, "port": "9200"}],
             http_auth=("admin", "admin"),
