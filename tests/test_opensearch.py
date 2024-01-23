@@ -25,6 +25,11 @@ def test_configure_opensearch_client_for_localhost():
     assert str(result) == "<OpenSearch([{'host': 'localhost', 'port': '9200'}])>"
 
 
+def test_configure_opensearch_client_for_local_opensearch_host():
+    result = tim_os.configure_opensearch_client("opensearch")
+    assert str(result) == "<OpenSearch([{'host': 'opensearch', 'port': '9200'}])>"
+
+
 @mock.patch("boto3.session.Session")
 def test_configure_opensearch_client_for_aws(mocked_boto3_session):  # noqa
     result = tim_os.configure_opensearch_client("fake-dev.us-east-1.es.amazonaws.com")
