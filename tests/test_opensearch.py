@@ -186,9 +186,7 @@ def test_get_all_aliased_indexes_for_source(test_opensearch_client):
 
 @my_vcr.use_cassette("get_all_aliased_indexes_for_source_no_aliases.yaml")
 def test_get_all_aliased_indexes_for_source_no_aliases(test_opensearch_client):
-    assert list(tim_os.get_indexes(test_opensearch_client).keys()) == [
-        "testsource-index"
-    ]
+    assert list(tim_os.get_indexes(test_opensearch_client).keys()) == ["testsource-index"]
     assert tim_os.get_aliases(test_opensearch_client) is None
     assert (
         tim_os.get_all_aliased_indexes_for_source(test_opensearch_client, "testsource")
@@ -350,9 +348,7 @@ def test_get_primary_index_for_source(test_opensearch_client):
 
 @my_vcr.use_cassette("get_primary_index_for_source_no_primary_index.yaml")
 def test_get_primary_index_for_source_no_primary_index(test_opensearch_client):
-    assert (
-        "test-2022-10-01t00-00-00" in tim_os.get_indexes(test_opensearch_client).keys()
-    )
+    assert "test-2022-10-01t00-00-00" in tim_os.get_indexes(test_opensearch_client).keys()
     aliases = tim_os.get_aliases(test_opensearch_client)
     assert aliases[PRIMARY_ALIAS] == [  # pylint: disable=unsubscriptable-object
         "othersource-index"

@@ -361,9 +361,7 @@ def bulk_delete(
     return result
 
 
-def bulk_index(
-    client: OpenSearch, index: str, records: Iterator[dict]
-) -> dict[str, int]:
+def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[str, int]:
     """Indexes records into an existing index using the streaming bulk helper.
 
     This action function uses the OpenSearch "index" action, which is a

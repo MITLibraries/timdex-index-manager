@@ -143,9 +143,7 @@ def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> N
             "Only one of --index and --source options is allowed, not both."
         )
     if not any(options):
-        raise click.UsageError(
-            "Must provide either a name or source for the new index."
-        )
+        raise click.UsageError("Must provide either a name or source for the new index.")
     if source:
         index = helpers.generate_index_name(source)
     try:
@@ -207,9 +205,7 @@ def demote(ctx: click.Context, index: str) -> None:
     client = ctx.obj["CLIENT"]
     index_aliases = tim_os.get_index_aliases(client, index) or []
     if not index_aliases:
-        click.echo(
-            f"Index '{index}' has no aliases, please check aliases and try again."
-        )
+        click.echo(f"Index '{index}' has no aliases, please check aliases and try again.")
         raise click.Abort()
     if PRIMARY_ALIAS in index_aliases:
         if not helpers.confirm_action(
