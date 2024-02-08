@@ -14,6 +14,7 @@ help: # preview Makefile commands
 
 install: # install Python dependencies and pre-commit hook
 	pipenv install --dev
+	pipenv run pre-commit install
 
 update: install # update Python dependencies
 	pipenv clean
