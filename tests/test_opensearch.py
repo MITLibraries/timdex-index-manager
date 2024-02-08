@@ -31,7 +31,7 @@ def test_configure_opensearch_client_for_local_opensearch_host():
 
 
 @mock.patch("boto3.session.Session")
-def test_configure_opensearch_client_for_aws(mocked_boto3_session):  # noqa
+def test_configure_opensearch_client_for_aws(mocked_boto3_session):
     result = tim_os.configure_opensearch_client("fake-dev.us-east-1.es.amazonaws.com")
     assert (
         str(result) == "<OpenSearch([{'host': 'fake-dev.us-east-1.es.amazonaws.com', "
@@ -348,7 +348,7 @@ def test_get_primary_index_for_source(test_opensearch_client):
 
 @my_vcr.use_cassette("get_primary_index_for_source_no_primary_index.yaml")
 def test_get_primary_index_for_source_no_primary_index(test_opensearch_client):
-    assert "test-2022-10-01t00-00-00" in tim_os.get_indexes(test_opensearch_client).keys()
+    assert "test-2022-10-01t00-00-00" in tim_os.get_indexes(test_opensearch_client)
     aliases = tim_os.get_aliases(test_opensearch_client)
     assert aliases[PRIMARY_ALIAS] == [  # pylint: disable=unsubscriptable-object
         "othersource-index"

@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
@@ -70,7 +70,7 @@ def get_formatted_info(client: OpenSearch) -> str:
     )
 
 
-def get_aliases(client: OpenSearch) -> Optional[dict[str, list[str]]]:
+def get_aliases(client: OpenSearch) -> dict[str, list[str]] | None:
     """Return all aliases with their associated indexes.
 
     Returns None if there are no aliases in the cluster.
@@ -95,7 +95,7 @@ def get_formatted_aliases(client: OpenSearch) -> str:
     return output
 
 
-def get_indexes(client: OpenSearch) -> Optional[dict[str, dict]]:
+def get_indexes(client: OpenSearch) -> dict[str, dict] | None:
     """Return all indexes with their summary information."""
     response = client.cat.indices(format="json")
     logger.debug(response)
@@ -131,7 +131,7 @@ def get_formatted_indexes(client: OpenSearch) -> str:
 
 def get_all_aliased_indexes_for_source(
     client: OpenSearch, source: str
-) -> Optional[dict[str, list[str]]]:
+) -> dict[str, list[str]] | None:
     """Return all aliased indexes for the source, grouped by alias.
 
     Returns a dict of the aliases with a list of the source index(es) for each. There
@@ -180,7 +180,7 @@ def create_index(client: OpenSearch, name: str) -> str:
             == "resource_already_exists_exception"
         ):
             raise IndexExistsError(name) from error
-        raise error
+        raise
     logger.debug(response)
     return response["index"]
 
@@ -195,7 +195,7 @@ def delete_index(client: OpenSearch, index: str) -> None:
 
 
 def get_or_create_index_from_source(
-    client: OpenSearch, source: str, new: bool
+    client: OpenSearch, source: str, *, new: bool
 ) -> tuple[str, bool]:
     """Get the primary index for the provided source or create a new index.
 
@@ -217,7 +217,7 @@ def get_or_create_index_from_source(
     return create_index(client, new_index_name), True
 
 
-def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:
+def get_index_aliases(client: OpenSearch, index: str) -> list[str] | None:
     """Return a sorted list of aliases assigned to an index.
 
     Returns None if the index has no aliases.
@@ -231,7 +231,7 @@ def get_index_aliases(client: OpenSearch, index: str) -> Optional[list[str]]:
     return sorted(aliases.keys()) or None
 
 
-def get_primary_index_for_source(client: OpenSearch, source: str) -> Optional[str]:
+def get_primary_index_for_source(client: OpenSearch, source: str) -> str | None:
     """Get the primary index for the provided source.
 
     Returns None if there is no primary index for the source.
@@ -241,7 +241,7 @@ def get_primary_index_for_source(client: OpenSearch, source: str) -> Optional[st
 
 
 def promote_index(
-    client: OpenSearch, index: str, extra_aliases: Optional[list[str]] = None
+    client: OpenSearch, index: str, extra_aliases: list[str] | None = None
 ) -> None:
     """Promote an index to all relevant aliases.
 
@@ -261,9 +261,7 @@ def promote_index(
         get_all_aliased_indexes_for_source(client, source) or {}
     )
     new_aliases = list(extra_aliases) if extra_aliases else []
-    all_aliases = set(
-        [PRIMARY_ALIAS] + list(current_aliased_source_indexes.keys()) + new_aliases
-    )
+    all_aliases = {PRIMARY_ALIAS, *current_aliased_source_indexes.keys(), *new_aliases}
 
     request_body = {
         "actions": [{"add": {"index": index, "alias": alias}} for alias in all_aliases]
@@ -289,7 +287,7 @@ def promote_index(
             and error.info.get("error", []).get("type") == "index_not_found_exception"
         ):
             raise IndexNotFoundError(index=index) from error
-        raise error
+        raise
 
 
 def remove_alias(client: OpenSearch, index: str, alias: str) -> None:
@@ -308,7 +306,7 @@ def remove_alias(client: OpenSearch, index: str, alias: str) -> None:
             and error.info.get("error", []).get("type") == "aliases_not_found_exception"
         ):
             raise AliasNotFoundError(alias=alias, index=index) from error
-        raise error
+        raise
 
 
 # Record functions

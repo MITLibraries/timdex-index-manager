@@ -9,18 +9,18 @@ from .conftest import my_vcr
 
 def test_confirm_action_yes(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: "Y")
-    assert helpers.confirm_action("test-index", "delete") is True
+    assert helpers.confirm_action("delete test-index") is True
 
 
 def test_confirm_action_no(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: "n")
-    assert helpers.confirm_action("test-index", "delete") is False
+    assert helpers.confirm_action("delete test-index") is False
 
 
 def test_confirm_action_invalid(capsys, monkeypatch):
     inputs = iter(["wrong", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
-    assert helpers.confirm_action("test-index", "delete") is True
+    assert helpers.confirm_action("delete test-index") is True
     out, _ = capsys.readouterr()
     assert out == "Invalid input: 'wrong', must be one of 'y' or 'n'.\n"
 
@@ -54,9 +54,8 @@ def test_generate_bulk_actions_delete():
 def test_generate_bulk_actions_invalid_action_raises_error():
     records = [{"timdex_record_id": "12345", "other_fields": "some_data"}]
     actions = helpers.generate_bulk_actions("test-index", records, "wrong")
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError, match="Invalid action parameter"):
         next(actions)
-        assert "Invalid action parameter" in str(error.value)
 
 
 def test_get_source_from_index():
@@ -69,7 +68,8 @@ def test_get_source_from_index_without_dash():
 
 def test_parse_records():
     records = list(helpers.parse_records("tests/fixtures/sample_records.json"))
-    assert len(records) == 6
+    n_sample_records = 6
+    assert len(records) == n_sample_records
     assert isinstance(records[0], dict)
 
 
@@ -77,45 +77,47 @@ def test_parse_deleted_records():
     records = list(
         helpers.parse_deleted_records("tests/fixtures/sample_deleted_records.txt")
     )
-    assert len(records) == 3
+    n_sample_deleted_records = 3
+    assert len(records) == n_sample_deleted_records
     assert isinstance(records[0], dict)
 
 
 def test_validate_bulk_cli_options_neither_index_nor_source_passed(
     test_opensearch_client,
 ):
-    with pytest.raises(UsageError) as error:
+    with pytest.raises(
+        UsageError, match="Must provide either an existing index name or a valid source."
+    ):
         helpers.validate_bulk_cli_options(None, None, test_opensearch_client)
-    assert "Must provide either an existing index name or a valid source." == str(
-        error.value
-    )
 
 
 def test_validate_bulk_cli_options_index_and_source_passed(test_opensearch_client):
-    with pytest.raises(UsageError) as error:
+    with pytest.raises(
+        UsageError, match="Only one of --index and --source options is allowed, not both."
+    ):
         helpers.validate_bulk_cli_options(
             "index-name", "source-name", test_opensearch_client
         )
-    assert "Only one of --index and --source options is allowed, not both." == str(
-        error.value
-    )
 
 
 @my_vcr.use_cassette("helpers/bulk_cli_nonexistent_index.yaml")
 def test_validate_bulk_cli_options_nonexistent_index_passed(test_opensearch_client):
-    with pytest.raises(BadParameter) as error:
+    with pytest.raises(
+        BadParameter, match="Index 'wrong' does not exist in the cluster."
+    ):
         helpers.validate_bulk_cli_options("wrong", None, test_opensearch_client)
-    assert "Index 'wrong' does not exist in the cluster." == str(error.value)
 
 
 @my_vcr.use_cassette("helpers/bulk_cli_no_primary_index_for_source.yaml")
 def test_validate_bulk_cli_options_no_primary_index_for_source(test_opensearch_client):
-    with pytest.raises(BadParameter) as error:
+    with pytest.raises(
+        BadParameter,
+        match=(
+            "No index name was passed and there is no "
+            "primary-aliased index for source 'dspace'."
+        ),
+    ):
         helpers.validate_bulk_cli_options(None, "dspace", test_opensearch_client)
-    assert (
-        "No index name was passed and there is no primary-aliased index for source "
-        "'dspace'." == str(error.value)
-    )
 
 
 def test_validate_index_name_no_value():
