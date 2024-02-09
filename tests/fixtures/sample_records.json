@@ -617,10 +617,7 @@
         "literary_form": "nonfiction",
         "locations": [
             {
-                "geopoint": [
-                    -77.025955,
-                    38.942142
-                ],
+                "geoshape": "BBOX (-77.11806895668957,-76.90988990509905, 38.99435963428633, 38.79162154730547)",
                 "kind": "Place of publication",
                 "value": "District of Columbia"
             }

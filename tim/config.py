@@ -26,12 +26,12 @@ VALID_SOURCES = [
 
 
 def configure_index_settings() -> tuple:
-    with open("config/opensearch_mappings.json", "r", encoding="utf-8") as file:
+    with open("config/opensearch_mappings.json", encoding="utf-8") as file:
         all_settings = json.load(file)
         return all_settings["mappings"], all_settings["settings"]
 
 
-def configure_logger(logger: logging.Logger, verbose: bool) -> str:
+def configure_logger(logger: logging.Logger, *, verbose: bool) -> str:
     if verbose:
         logging.basicConfig(
             format="%(asctime)s %(levelname)s %(name)s.%(funcName)s() line %(lineno)d: "

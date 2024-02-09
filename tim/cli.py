@@ -1,7 +1,7 @@
+# ruff: noqa: TRY003, EM101
 import logging
 from datetime import timedelta
 from time import perf_counter
-from typing import Optional
 
 import rich_click as click
 
@@ -47,16 +47,15 @@ click.rich_click.COMMAND_GROUPS = {
     "-v", "--verbose", is_flag=True, help="Pass to log at debug level instead of info"
 )
 @click.pass_context
-def main(ctx: click.Context, url: str, verbose: bool) -> None:
-    """
-    TIM provides commands for interacting with OpenSearch indexes.
+def main(ctx: click.Context, url: str, *, verbose: bool) -> None:
+    """TIM provides commands for interacting with OpenSearch indexes.
 
     For more details on a specific command, run tim COMMAND -h.
     """
     ctx.ensure_object(dict)
     ctx.obj["START_TIME"] = perf_counter()
     root_logger = logging.getLogger()
-    logger.info(configure_logger(root_logger, verbose))
+    logger.info(configure_logger(root_logger, verbose=verbose))
     logger.info(configure_sentry())
     ctx.obj["CLIENT"] = tim_os.configure_opensearch_client(url)
     logger.info("OpenSearch client configured for endpoint '%s'", url)
@@ -64,9 +63,7 @@ def main(ctx: click.Context, url: str, verbose: bool) -> None:
 
 @main.result_callback()
 @click.pass_context
-def log_process_time(
-    ctx: click.Context, result: Optional[object], **kwargs: dict  # noqa
-) -> None:
+def log_process_time(ctx: click.Context, _result: object, **_kwargs: dict) -> None:
     elapsed_time = perf_counter() - ctx.obj["START_TIME"]
     logger.info(
         "Total time to complete process: %s", str(timedelta(seconds=elapsed_time))
@@ -90,8 +87,7 @@ def aliases(ctx: click.Context) -> None:
 @main.command()
 @click.pass_context
 def indexes(ctx: click.Context) -> None:
-    """
-    Display summary information about all indexes in the cluster.
+    """Display summary information about all indexes in the cluster.
 
     Prints all indexes in the cluster in alphabetical order by name. For each index,
     displays information including its status, health, number of documents, primary
@@ -126,9 +122,8 @@ def ping(ctx: click.Context) -> None:
     "the configured sources list.",
 )
 @click.pass_context
-def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> None:
-    """
-    Create a new index in the cluster.
+def create(ctx: click.Context, index: str, source: str) -> None:
+    """Create a new index in the cluster.
 
     Must provide either the index name or source option. If source is provided, will
     create an index named according to our convention with the source and a generated
@@ -143,16 +138,14 @@ def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> N
             "Only one of --index and --source options is allowed, not both."
         )
     if not any(options):
-        raise click.UsageError(
-            "Must provide either a name or source for the new index."
-        )
+        raise click.UsageError("Must provide either a name or source for the new index.")
     if source:
         index = helpers.generate_index_name(source)
     try:
         new_index = tim_os.create_index(ctx.obj["CLIENT"], str(index))
     except errors.IndexExistsError as error:
-        logger.error(error)
-        raise click.Abort()
+        logger.error(error)  # noqa: TRY400
+        raise click.Abort from error
     logger.info("Index '%s' created.", new_index)
     ctx.invoke(indexes)
 
@@ -171,7 +164,7 @@ def create(ctx: click.Context, index: Optional[str], source: Optional[str]) -> N
     help="Pass to disable user confirmation prompt.",
 )
 @click.pass_context
-def delete(ctx: click.Context, index: str, force: bool) -> None:
+def delete(ctx: click.Context, index: str, *, force: bool) -> None:
     """Delete an index.
 
     Will prompt for confirmation before index deletion unless the --force option is
@@ -179,14 +172,14 @@ def delete(ctx: click.Context, index: str, force: bool) -> None:
     """
     client = ctx.obj["CLIENT"]
     if force or helpers.confirm_action(
-        index, f"Are you sure you want to delete index '{index}'?"
+        f"Are you sure you want to delete index '{index}'?"
     ):
         tim_os.delete_index(client, index)
         click.echo(f"Index '{index}' deleted.")
         ctx.invoke(indexes)
     else:
         click.echo("Ok, index will not be deleted.")
-        raise click.Abort()
+        raise click.Abort
 
 
 @main.command()
@@ -207,18 +200,14 @@ def demote(ctx: click.Context, index: str) -> None:
     client = ctx.obj["CLIENT"]
     index_aliases = tim_os.get_index_aliases(client, index) or []
     if not index_aliases:
-        click.echo(
-            f"Index '{index}' has no aliases, please check aliases and try again."
-        )
-        raise click.Abort()
-    if PRIMARY_ALIAS in index_aliases:
-        if not helpers.confirm_action(
-            index,
-            f"Are you sure you want to demote index '{index}' from the primary alias "
-            "without promoting another index for the source?",
-        ):
-            click.echo("Ok, index will not be demoted.")
-            raise click.Abort()
+        click.echo(f"Index '{index}' has no aliases, please check aliases and try again.")
+        raise click.Abort
+    if PRIMARY_ALIAS in index_aliases and not helpers.confirm_action(
+        f"Are you sure you want to demote index '{index}' from the primary alias "
+        "without promoting another index for the source?",
+    ):
+        click.echo("Ok, index will not be demoted.")
+        raise click.Abort
     for alias in index_aliases:
         tim_os.remove_alias(client, index, alias)
     click.echo(f"Index '{index}' demoted from aliases: {index_aliases}")
@@ -240,9 +229,8 @@ def demote(ctx: click.Context, index: str) -> None:
     "be repeated to promote the index to multiple aliases at once.",
 )
 @click.pass_context
-def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
-    """
-    Promote an index to the primary alias and add it to any additional provided aliases.
+def promote(ctx: click.Context, index: str, alias: list[str]) -> None:
+    """Promote index as the primary alias and add it to any additional provided aliases.
 
     This command promotes an index to the primary alias, any alias that already has an
     index for the same source, and any additional alias(es) passed to the command. If
@@ -274,11 +262,8 @@ def promote(ctx: click.Context, index: str, alias: Optional[list[str]]) -> None:
 )
 @click.argument("filepath", type=click.Path())
 @click.pass_context
-def bulk_index(
-    ctx: click.Context, index: Optional[str], source: Optional[str], filepath: str
-) -> None:
-    """
-    Bulk index records into an index.
+def bulk_index(ctx: click.Context, index: str, source: str, filepath: str) -> None:
+    """Bulk index records into an index.
 
     Must provide either the name of an existing index in the cluster or a valid source.
     If source is provided, will index records into the primary-aliased index for the
@@ -320,11 +305,8 @@ def bulk_index(
 )
 @click.argument("filepath", type=click.Path())
 @click.pass_context
-def bulk_delete(
-    ctx: click.Context, index: Optional[str], source: Optional[str], filepath: str
-) -> None:
-    """
-    Bulk delete records from an index.
+def bulk_delete(ctx: click.Context, index: str, source: str, filepath: str) -> None:
+    """Bulk delete records from an index.
 
     Must provide either the name of an existing index in the cluster or a valid source.
     If source is provided, will delete records from the primary-aliased index for the
