@@ -60,7 +60,7 @@ For a more detailed example with test data, please refer to the Confluence docum
 
 2. Open a new terminal, and create a new index. Copy the name of the created index printed to the terminal's output.
     ```
-    pipenv run tim create -s <index-name>
+    pipenv run tim create -s <source-name>
     ```
 
 3. Copy the index name and promote the index to the alias.
