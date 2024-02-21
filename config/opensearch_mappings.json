@@ -339,7 +339,12 @@
         "type": "nested",
         "properties": {
           "description": {
-            "type": "text"
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           },
           "kind": {
             "type": "keyword",
