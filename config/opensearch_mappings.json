@@ -303,6 +303,9 @@
         "type": "text",
         "index": "false"
       },
+      "provider": {
+        "type": "keyword"
+      },
       "publication_frequency": {
         "type": "text",
         "fields": {
