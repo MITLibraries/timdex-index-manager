@@ -315,8 +315,28 @@
           }
         }
       },
-      "publication_information": {
-        "type": "text"
+      "publishers": {
+        "type": "nested",
+        "include_in_parent": "true",
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "normalizer": "lowercase"
+              }
+            }
+          },
+          "date": {
+            "type": "keyword",
+            "normalizer": "lowercase"
+          },
+          "location": {
+            "type": "keyword",
+            "normalizer": "lowercase"
+          }
+        }
       },
       "related_items": {
         "type": "nested",
