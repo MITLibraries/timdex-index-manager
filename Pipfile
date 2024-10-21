@@ -25,7 +25,7 @@ vcrpy = "*"
 ruff = "*"
 
 [requires]
-python_version = "3.11"
+python_version = "3.12"
 
 [scripts]
 tim = "python -c \"from tim.cli import main; main(prog_name='tim')\""
