@@ -1,13 +1,16 @@
 # ruff: noqa: TRY003, EM101
+import json
 import logging
 from datetime import timedelta
 from time import perf_counter
 
 import rich_click as click
+from timdex_dataset_api import TIMDEXDataset
 
 from tim import errors, helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
+from tim.errors import BulkIndexingError
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +26,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Bulk record processing commands",
-            "commands": ["bulk-index", "bulk-delete"],
+            "commands": ["bulk-index", "bulk-delete", "bulk-update"],
         },
     ]
 }
@@ -252,6 +255,7 @@ def promote(ctx: click.Context, index: str, alias: list[str]) -> None:
 # Bulk record processing commands
 
 
+# NOTE: FEATURE FLAG: 'bulk_index' may be removed entirely when v2 work done
 @main.command()
 @click.option("-i", "--index", help="Name of the index to bulk index records into.")
 @click.option(
@@ -295,6 +299,7 @@ def bulk_index(ctx: click.Context, index: str, source: str, filepath: str) -> No
     )
 
 
+# NOTE: FEATURE FLAG: 'bulk_delete' may be removed entirely when v2 work done
 @main.command()
 @click.option("-i", "--index", help="Name of the index to bulk delete records from.")
 @click.option(
@@ -334,3 +339,61 @@ def bulk_delete(ctx: click.Context, index: str, source: str, filepath: str) -> N
         results["deleted"],
         results["total"],
     )
+
+
+@main.command()
+@click.option("-i", "--index", help="Name of the index to bulk index records into.")
+@click.option(
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help="Source whose primary-aliased index to bulk index records into.",
+)
+@click.option("-d", "--run-date", help="Run date, formatted as YYYY-MM-DD.")
+@click.option("-rid", "--run-id", help="Run ID.")
+@click.argument("dataset_path", type=click.Path())
+@click.pass_context
+def bulk_update(
+    ctx: click.Context,
+    index: str,
+    source: str,
+    run_date: str,
+    run_id: str,
+    dataset_path: str,
+) -> None:
+    """Bulk update records for an index.
+
+    Must provide either the name of an existing index in the cluster or a valid source.
+    If source is provided, it will perform indexing and/or deletion of records for
+    the primary-aliased index for the source.
+
+    The method will read transformed records from a TIMDEXDataset
+    located at dataset_path using the 'timdex-dataset-api' library. The dataset
+    is filtered by run date and run ID.
+
+    Logs an error and aborts if the provided index doesn't exist in the cluster.
+    """
+    client = ctx.obj["CLIENT"]
+    index = helpers.validate_bulk_cli_options(index, source, client)
+
+    logger.info(f"Bulk updating records from dataset '{dataset_path}' into '{index}'")
+
+    index_results = {"created": 0, "updated": 0, "errors": 0, "total": 0}
+    delete_results = {"deleted": 0, "errors": 0, "total": 0}
+
+    td = TIMDEXDataset(location=dataset_path)
+    td.load(run_date=run_date, run_id=run_id)
+
+    # bulk index records
+    records_to_index = td.read_transformed_records_iter(action="index")
+    try:
+        index_results.update(tim_os.bulk_index(client, index, records_to_index))
+    except BulkIndexingError as exception:
+        logger.info(f"Bulk indexing failed: {exception}")
+
+    # bulk delete records
+    records_to_delete = td.read_dicts_iter(columns=["timdex_record_id"], action="delete")
+    delete_results.update(tim_os.bulk_delete(client, index, records_to_delete))
+
+    summary_results = {"index": index_results, "delete": delete_results}
+    logger.info(f"Bulk update complete: {json.dumps(summary_results)}")

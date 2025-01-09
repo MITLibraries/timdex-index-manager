@@ -21,6 +21,7 @@ mypy = "*"
 pre-commit = "*"
 pytest = "*"
 ruff = "*"
+timdex-dataset-api = { git = "git+https://github.com/MITLibraries/timdex-dataset-api.git"}
 vcrpy = "*"
 
 [requires]

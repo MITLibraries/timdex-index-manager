@@ -91,3 +91,12 @@ publish-stage:
 	docker login -u AWS -p $$(aws ecr get-login-password --region us-east-1) $(ECR_URL_STAGE)
 	docker push $(ECR_URL_STAGE):latest
 	docker push $(ECR_URL_STAGE):`git describe --always`
+
+##############################
+# Local Opensearch commands
+##############################
+
+local-opensearch: # Run a local instance of Opensearch via Docker Compose
+	docker pull opensearchproject/opensearch:latest
+	docker pull opensearchproject/opensearch-dashboards:latest
+	docker compose --env-file .env up

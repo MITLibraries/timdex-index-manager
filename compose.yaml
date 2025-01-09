@@ -10,6 +10,7 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     volumes:
       - opensearch-local-data:/usr/share/opensearch/data
     networks:
@@ -21,6 +22,7 @@ services:
     environment:
       - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
       - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     networks:
       - opensearch-local-net
 volumes:

@@ -7,7 +7,7 @@ disallow_untyped_defs = true
 exclude = ["tests/"]
 
 [[tool.mypy.overrides]]
-module = ["ijson", "smart_open"]
+module = ["ijson", "smart_open", "timdex_dataset_api"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -27,8 +27,6 @@ select = ["ALL", "PT"]
 
 ignore = [
     # default
-    "ANN101", 
-    "ANN102", 
     "COM812", 
     "D107", 
     "N812", 
@@ -41,6 +39,7 @@ ignore = [
     "D102",
     "D103",
     "D104", 
+    "G004",
     "PLR0912",
     "PLR0913", 
     "PLR0915",
