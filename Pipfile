@@ -11,6 +11,7 @@ opensearch-py = "*"
 rich-click = "*"
 sentry-sdk = "*"
 smart-open = {extras = ["s3"], version = "*"}
+timdex-dataset-api = { git = "git+https://github.com/MITLibraries/timdex-dataset-api.git"}
 
 [dev-packages]
 black = "*"
@@ -21,7 +22,6 @@ mypy = "*"
 pre-commit = "*"
 pytest = "*"
 ruff = "*"
-timdex-dataset-api = { git = "git+https://github.com/MITLibraries/timdex-dataset-api.git"}
 vcrpy = "*"
 
 [requires]
