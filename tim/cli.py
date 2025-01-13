@@ -255,7 +255,7 @@ def promote(ctx: click.Context, index: str, alias: list[str]) -> None:
 # Bulk record processing commands
 
 
-# NOTE: FEATURE FLAG: 'bulk_index' may be removed entirely when v2 work done
+# NOTE: FEATURE FLAG: 'bulk_index' supports ETL v1
 @main.command()
 @click.option("-i", "--index", help="Name of the index to bulk index records into.")
 @click.option(
@@ -299,7 +299,7 @@ def bulk_index(ctx: click.Context, index: str, source: str, filepath: str) -> No
     )
 
 
-# NOTE: FEATURE FLAG: 'bulk_delete' may be removed entirely when v2 work done
+# NOTE: FEATURE FLAG: 'bulk_delete' supports ETL v1
 @main.command()
 @click.option("-i", "--index", help="Name of the index to bulk delete records from.")
 @click.option(
