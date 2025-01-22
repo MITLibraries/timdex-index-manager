@@ -96,7 +96,11 @@ publish-stage:
 # Local Opensearch commands
 ##############################
 
-local-opensearch: # Run a local instance of Opensearch via Docker Compose
-	docker pull opensearchproject/opensearch:latest
-	docker pull opensearchproject/opensearch-dashboards:latest
+local-opensearch-start: # Start local instance of Opensearch
 	docker compose --env-file .env up
+
+local-opensearch-stop: # Stop local instance of Opensearch
+	docker compose --env-file .env stop
+
+local-opensearch-teardown: # Teardown local instance of Opensearch (includes data volume)
+	docker compose --env-file .env down -v
