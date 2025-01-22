@@ -418,6 +418,32 @@
         "type": "text",
         "index": "false"
       },
+      "timdex_provenance": {
+        "type": "nested",
+        "include_in_parent": "true",
+        "properties": {
+          "source": {
+            "type": "keyword",
+            "normalizer": "lowercase"
+          },
+          "run_date": {
+            "type": "text",
+            "fields": {
+              "as_date": {
+                "type": "date",
+                "format": "yyyy-MM-dd"
+              }
+            }
+          },
+          "run_id": {
+            "type": "keyword",
+            "normalizer": "lowercase"
+          },
+          "run_record_offset": {
+            "type": "long"
+          }
+        }
+      },
       "title": {
         "type": "text",
         "fields": {
