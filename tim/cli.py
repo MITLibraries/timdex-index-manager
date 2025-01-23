@@ -342,7 +342,11 @@ def bulk_delete(ctx: click.Context, index: str, source: str, filepath: str) -> N
 
 
 @main.command()
-@click.option("-i", "--index", help="Name of the index to bulk index records into.")
+@click.option(
+    "-i",
+    "--index",
+    help="Name of the index on which to perform bulk indexing and deletion.",
+)
 @click.option(
     "-s",
     "--source",
