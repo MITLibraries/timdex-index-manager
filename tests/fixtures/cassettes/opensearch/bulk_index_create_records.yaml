@@ -19,10 +19,10 @@ interactions:
       of publication\",\"value\":\"New York (State)\"}],\"notes\":[{\"value\":[\"Paquito
       d' Rivera, saxophone ; Paquito d' Rivera, soprano saxophone.\",\"Description
       based on hard copy version record.\"]}],\"physical_description\":\"1 online
-      resource (1 sound file)\",\"publication_information\":[\"[New York, N.Y.] :
-      Chesky Records, p2008.\"],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990026671500206761\",\"subjects\":[{\"value\":[\"Jazz.\",\"Latin
+      resource (1 sound file)\",\"publishers\":[{\"name\":\"Chesky Records\",\"date\":\"2008\",\"location\":\"New
+      York, N.Y.\"}],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990026671500206761\",\"subjects\":[{\"value\":[\"Jazz.\",\"Latin
       jazz.\",\"Clarinet music (Jazz)\",\"Saxophone music (Jazz)\"]}],\"timdex_record_id\":\"mit:alma:990026671500206761\",\"title\":\"Spice
-      it up! the best of Paquito D'Rivera.\"}\n{\"index\":{\"_id\":\"mit:alma:990027672770206761\",\"_index\":\"test-index\"}}\n{\"call_numbers\":[\"TX724.5.A1\",\"641.595\"],\"content_type\":[\"Text\"],\"contents\":[\"Breakfast
+      it up! the best of Paquito D'Rivera.\",\"timdex_provenance\":{\"source\":\"alma\",\"run_date\":\"2025-01-01\",\"run_id\":\"run-abc-123\",\"run_record_offset\":0}}\n{\"index\":{\"_id\":\"mit:alma:990027672770206761\",\"_index\":\"test-index\"}}\n{\"call_numbers\":[\"TX724.5.A1\",\"641.595\"],\"content_type\":[\"Text\"],\"contents\":[\"Breakfast
       -- Lunch & small eats -- Date night in -- Celebrations & gatherings -- On the
       side -- Sweet -- Drinks.\"],\"contributors\":[{\"kind\":\"author\",\"value\":\"McTernan,
       Cynthia Chen, author.\"}],\"dates\":[{\"kind\":\"Date of publication\",\"value\":\"2018\"}],\"edition\":\"First
@@ -32,9 +32,9 @@ interactions:
       (hardback)\"},{\"kind\":\"isbn\",\"value\":\"9781635650020 (hardback)\"},{\"kind\":\"oclc\",\"value\":\"1019737335\"},{\"kind\":\"oclc\",\"value\":\"1061147498\"},{\"kind\":\"lccn\",\"value\":\"2018287279\"}],\"languages\":[\"English\"],\"literary_form\":\"nonfiction\",\"locations\":[{\"kind\":\"Place
       of publication\",\"value\":\"New York (State)\"}],\"notes\":[{\"value\":[\"Cynthia
       Chen McTernan.\",\"Includes index.\"]}],\"physical_description\":\"285 pages
-      : color illustrations ; 27 cm\",\"publication_information\":[\"New York : Rodale
-      Books, an imprint of the Crown Publishing Group, a division of Penguin Random
-      House LLC, [2018]\",\"\xA92018\"],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990027672770206761\",\"subjects\":[{\"value\":[\"Asian
+      : color illustrations ; 27 cm\",\"publishers\":[{\"name\":\"Rodale Books, an
+      imprint of the Crown Publishing Group, a division of Penguin Random House LLC\",\"date\":\"2018\",\"location\":\"New
+      York\"},{\"date\":\"\xA92018\"}],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990027672770206761\",\"subjects\":[{\"value\":[\"Asian
       American cooking.\"]}],\"summary\":[\"In A Common Table, Two Red Bowls blogger
       Cynthia Chen McTernan shares more than 80 Asian-inspired, modern recipes that
       marry food from her Chinese roots, Southern upbringing, and Korean mother-in-law's
@@ -57,16 +57,17 @@ interactions:
       the food we make and eat is rarely the product of one culture or moment, but
       is richly interwoven--and though some dishes might seem new or different, they
       are often more alike than they appear. -- Amazon.\"],\"timdex_record_id\":\"mit:alma:990027672770206761\",\"title\":\"A
-      common table : 80 recipes and stories from my shared cultures /\"}\n{\"index\":{\"_id\":\"mit:alma:9933052979806761\",\"_index\":\"test-index\"}}\n{\"call_numbers\":[\"SB351.P3\",\"633\"],\"content_type\":[\"Text\"],\"contributors\":[{\"kind\":\"contributor\",\"value\":\"American
+      common table : 80 recipes and stories from my shared cultures /\",\"timdex_provenance\":{\"source\":\"alma\",\"run_date\":\"2025-01-01\",\"run_id\":\"run-abc-123\",\"run_record_offset\":1}}\n{\"index\":{\"_id\":\"mit:alma:9933052979806761\",\"_index\":\"test-index\"}}\n{\"call_numbers\":[\"SB351.P3\",\"633\"],\"content_type\":[\"Text\"],\"contributors\":[{\"kind\":\"contributor\",\"value\":\"American
       Peanut Research and Education Society.\"}],\"dates\":[{\"kind\":\"Date of publication\",\"value\":\"2005\"}],\"identifiers\":[{\"kind\":\"issn\",\"value\":\"1943-7668\"},{\"kind\":\"oclc\",\"value\":\"232113616\"},{\"kind\":\"lccn\",\"value\":\"2008202156\"}],\"languages\":[\"English\"],\"literary_form\":\"fiction\",\"locations\":[{\"kind\":\"Place
       of publication\",\"value\":\"Oklahoma\"}],\"notes\":[{\"value\":[\"Refereed/Peer-reviewed\",\"Electronic
       reproduction. [S.l.] : HathiTrust Digital Library, 2010.\",\"Latest issue consulted:
       Vol. 35, issue 1 (Jan./June 2008).\",\"Description based on print version record.\"]}],\"numbering\":\"Began
       with v. 32, issue 1 (Jan./June 2005).\",\"physical_description\":\"1 online
-      resource\",\"publication_frequency\":[\"Semiannual\"],\"publication_information\":[\"Perkins,
-      OK : American Peanut Research and Education Society\"],\"source\":\"MIT Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma9933052979806761\",\"subjects\":[{\"value\":[\"Peanuts
+      resource\",\"publication_frequency\":[\"Semiannual\"],\"publishers\":[{\"name\":\"American
+      Peanut Research and Education Society\",\"location\":\"Perkins, OK\"}],\"source\":\"MIT
+      Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma9933052979806761\",\"subjects\":[{\"value\":[\"Peanuts
       Periodicals.\",\"(OCoLC)fst01055999 Peanuts.\"]}],\"timdex_record_id\":\"mit:alma:9933052979806761\",\"title\":\"Peanut
-      science.\"}\n{\"index\":{\"_id\":\"mit:dspace:1721.1-113566\",\"_index\":\"test-index\"}}\n{\"citation\":\"Ranjram,
+      science.\",\"timdex_provenance\":{\"source\":\"alma\",\"run_date\":\"2025-01-01\",\"run_id\":\"run-abc-123\",\"run_record_offset\":2}}\n{\"index\":{\"_id\":\"mit:dspace:1721.1-113566\",\"_index\":\"test-index\"}}\n{\"citation\":\"Ranjram,
       Mike K., Intae Moon, and David J. Perreault. 'Variable-Inverter-Rectifier-Transformer:
       A Hybrid Electronic and Magnetic Structure Enabling&#13; Adjustable High Step-Down
       Conversion Ratios.' 2017 IEEE Workshop on Control and Modeling for Power Electronics
@@ -102,7 +103,7 @@ interactions:
       9, 12V) validates the operating principle and modelling of the proposed structure
       and achieves conversion efficiencies between 93.4% and&#13; 95.7% at 25-36 W.\"],\"timdex_record_id\":\"mit:dspace:1721.1-113566\",\"title\":\"Variable-Inverter-Rectifier-Transformer:
       A Hybrid Electronic and Magnetic Structure Enabling Adjustable High Step-Down
-      Conversion Ratios\"}\n{\"index\":{\"_id\":\"mit:archivesspace:VC.0002\",\"_index\":\"test-index\"}}\n{\"citation\":\"Charles
+      Conversion Ratios\",\"timdex_provenance\":{\"source\":\"alma\",\"run_date\":\"2025-01-01\",\"run_id\":\"run-abc-123\",\"run_record_offset\":3}}\n{\"index\":{\"_id\":\"mit:archivesspace:VC.0002\",\"_index\":\"test-index\"}}\n{\"citation\":\"Charles
       J. Connick Stained Glass Foundation Collection, VC-0002, box X. Massachusetts
       Institute of Technology, Department of Distinctive Collections, Cambridge, Massachusetts.\",\"content_type\":[\"Archival
       collection\"],\"contents\":[\"This collection is organized into ten series\",\"Series
@@ -163,7 +164,7 @@ interactions:
       ArchivesSpace\",\"source_link\":\"https://archivesspace.mit.edu/repositories/2/resources/1\",\"subjects\":[{\"kind\":\"LCSH\",\"value\":[\"Glass
       painting and staining\"]},{\"kind\":\"NAF\",\"value\":[\"Connick, Charles J.
       (Charles Jay)\"]}],\"timdex_record_id\":\"mit:archivesspace:VC.0002\",\"title\":\"Charles
-      J. Connick Stained Glass Foundation Collection\"}\n{\"index\":{\"_id\":\"mit:alma:990011240870206761\",\"_index\":\"test-index\"}}\n{\"call_numbers\":[\"SB106.B56.C76
+      J. Connick Stained Glass Foundation Collection\",\"timdex_provenance\":{\"source\":\"alma\",\"run_date\":\"2025-01-01\",\"run_id\":\"run-abc-123\",\"run_record_offset\":4}}\n{\"index\":{\"_id\":\"mit:alma:990011240870206761\",\"_index\":\"test-index\"}}\n{\"call_numbers\":[\"SB106.B56.C76
       2002\",\"631.5/233\"],\"contents\":[\"1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12.
       13. 14. 15. Overview of Crop Biotechnology / Defining Biotechnology: Increasingly
       Important and Increasingly Difficult / Genetically Modified Crop Approvals and
@@ -199,33 +200,34 @@ interactions:
       2002\",\"collection\":\"Off Campus Collection\",\"format\":\"Print volume\",\"location\":\"Library
       Storage Annex\"}],\"identifiers\":[{\"kind\":\"isbn\",\"value\":\"0841237662
       (alk. paper)\"},{\"kind\":\"oclc\",\"value\":\"49383680\"},{\"kind\":\"lccn\",\"value\":\"2002018690\"}],\"languages\":[\"English\"],\"links\":[{\"kind\":\"Hathi
-      Trust\",\"url\":\"http://catalog.hathitrust.org/api/volumes/oclc/49383680.html\"},{\"kind\":\"unknown\",\"url\":\"http://dx.doi.org/10.1021/bk-2002-0829\"}],\"literary_form\":\"nonfiction\",\"locations\":[{\"geopoint\":[-77.025955,38.942142],\"kind\":\"Place
+      Trust\",\"url\":\"http://catalog.hathitrust.org/api/volumes/oclc/49383680.html\"},{\"kind\":\"unknown\",\"url\":\"http://dx.doi.org/10.1021/bk-2002-0829\"}],\"literary_form\":\"nonfiction\",\"locations\":[{\"geoshape\":\"BBOX
+      (-77.11806895668957,-76.90988990509905, 38.99435963428633, 38.79162154730547)\",\"kind\":\"Place
       of publication\",\"value\":\"District of Columbia\"}],\"notes\":[{\"value\":[\"K.
       Rajasekaran, editor, T.J. Jacks, editor, J.W. Finley, editor.\",\"\\\"Product
       of a 3-day symposium held during the 219th American Chemical Society (ACS) national
       meeting in San Francisco, California in 2000\\\"--P. x.\",\"Includes bibliographical
       references and indexes.\"]}],\"physical_description\":\"xi, 259 p. : ill. ;
-      24 cm.\",\"publication_information\":[\"Washington, DC : American Chemical Society
-      : Distributed by Oxford University Press, c2002.\"],\"related_items\":[{\"description\":\"ACS
+      24 cm.\",\"publishers\":[{\"name\":\"American Chemical Society : Distributed
+      by Oxford University Press\",\"date\":\"c2002\",\"location\":\"Washington, DC\"}],\"related_items\":[{\"description\":\"ACS
       symposium series ; 829.\",\"relationship\":\"In series\"}],\"source\":\"MIT
       Alma\",\"source_link\":\"https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?vid=01MIT_INST:MIT&docid=alma990011240870206761\",\"subjects\":[{\"value\":[\"Plant
       biotechnology Congresses.\",\"Crops Congresses. Genetic engineering\"]}],\"timdex_record_id\":\"mit:alma:990011240870206761\",\"title\":\"Crop
-      biotechnology /\"}\n"
+      biotechnology /\",\"timdex_provenance\":{\"source\":\"alma\",\"run_date\":\"2025-01-01\",\"run_id\":\"run-abc-123\",\"run_record_offset\":5}}\n"
     headers:
       Content-Length:
-      - '19794'
+      - '20552'
       content-type:
       - application/json
       user-agent:
-      - opensearch-py/2.0.0 (Python 3.10.6)
+      - opensearch-py/2.8.0 (Python 3.12.2)
     method: POST
     uri: http://localhost:9200/_bulk
   response:
     body:
-      string: '{"took":153,"errors":false,"items":[{"index":{"_index":"test-index","_type":"_doc","_id":"mit:alma:990026671500206761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_type":"_doc","_id":"mit:alma:990027672770206761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":1,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_type":"_doc","_id":"mit:alma:9933052979806761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":2,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_type":"_doc","_id":"mit:dspace:1721.1-113566","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":3,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_type":"_doc","_id":"mit:archivesspace:VC.0002","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":4,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_type":"_doc","_id":"mit:alma:990011240870206761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":5,"_primary_term":1,"status":201}}]}'
+      string: '{"took":40,"errors":false,"items":[{"index":{"_index":"test-index","_id":"mit:alma:990026671500206761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_id":"mit:alma:990027672770206761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":1,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_id":"mit:alma:9933052979806761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":2,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_id":"mit:dspace:1721.1-113566","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":3,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_id":"mit:archivesspace:VC.0002","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":4,"_primary_term":1,"status":201}},{"index":{"_index":"test-index","_id":"mit:alma:990011240870206761","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":5,"_primary_term":1,"status":201}}]}'
     headers:
       content-length:
-      - '1278'
+      - '1187'
       content-type:
       - application/json; charset=UTF-8
     status:
@@ -239,7 +241,7 @@ interactions:
       content-type:
       - application/json
       user-agent:
-      - opensearch-py/2.0.0 (Python 3.10.6)
+      - opensearch-py/2.8.0 (Python 3.12.2)
     method: POST
     uri: http://localhost:9200/test-index/_refresh
   response:

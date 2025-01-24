@@ -2,7 +2,7 @@ import pytest
 import vcr
 from click.testing import CliRunner
 
-from tim.opensearch import configure_opensearch_client
+import tim.opensearch as tim_os
 
 EXIT_CODES = {
     "success": 0,
@@ -27,7 +27,7 @@ def _test_env(monkeypatch):
 
 @pytest.fixture
 def test_opensearch_client():
-    return configure_opensearch_client("localhost")
+    return tim_os.configure_opensearch_client("localhost")
 
 
 @pytest.fixture
