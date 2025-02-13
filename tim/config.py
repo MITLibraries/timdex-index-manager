@@ -31,23 +31,40 @@ def configure_index_settings() -> tuple:
         return all_settings["mappings"], all_settings["settings"]
 
 
-def configure_logger(logger: logging.Logger, *, verbose: bool) -> str:
+def configure_logger(
+    root_logger: logging.Logger,
+    *,
+    verbose: bool = False,
+    warning_only_loggers: str | None = None,
+) -> str:
+    """Configure application via passed application root logger.
+
+    If verbose=True, 3rd party libraries can be quite chatty.  For convenience, they can
+    be set to WARNING level by either passing a comma seperated list of logger names to
+    'warning_only_loggers' or by setting the env var WARNING_ONLY_LOGGERS.
+    """
     if verbose:
-        logging.basicConfig(
-            format="%(asctime)s %(levelname)s %(name)s.%(funcName)s() line %(lineno)d: "
-            "%(message)s"
+        root_logger.setLevel(logging.DEBUG)
+        logging_format = (
+            "%(asctime)s %(levelname)s %(name)s.%(funcName)s() "
+            "line %(lineno)d: %(message)s"
         )
-        logger.setLevel(logging.DEBUG)
     else:
-        logging.basicConfig(
-            format="%(asctime)s %(levelname)s %(name)s.%(funcName)s(): %(message)s"
-        )
-        logger.setLevel(logging.INFO)
-    for handler in logging.root.handlers:
-        handler.addFilter(logging.Filter("tim"))
+        root_logger.setLevel(logging.INFO)
+        logging_format = "%(asctime)s %(levelname)s %(name)s.%(funcName)s(): %(message)s"
+
+    warning_only_loggers = os.getenv("WARNING_ONLY_LOGGERS", warning_only_loggers)
+    if warning_only_loggers:
+        for name in warning_only_loggers.split(","):
+            logging.getLogger(name).setLevel(logging.WARNING)
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(logging_format))
+    root_logger.addHandler(handler)
+
     return (
-        f"Logger '{logger.name}' configured with level="
-        f"{logging.getLevelName(logger.getEffectiveLevel())}"
+        f"Logger '{root_logger.name}' configured with level="
+        f"{logging.getLevelName(root_logger.getEffectiveLevel())}"
     )
 
 
