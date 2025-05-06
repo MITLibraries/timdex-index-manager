@@ -23,6 +23,7 @@ pre-commit = "*"
 pytest = "*"
 ruff = "*"
 vcrpy = "*"
+pip-audit = "*"
 
 [requires]
 python_version = "3.12"
