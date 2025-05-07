@@ -115,33 +115,31 @@ SENTRY_DSN=### If set to a valid Sentry DSN, enables Sentry exception monitoring
 All CLI commands can be run with `pipenv run`. 
 
 ```
-Usage: tim [OPTIONS] COMMAND [ARGS]...                                                                                                
-                                                                                                                                       
- TIM provides commands for interacting with OpenSearch indexes.                                                                        
- For more details on a specific command, run tim COMMAND -h.                                                                           
-                                                                                                                                       
-╭─ Options ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --url      -u  TEXT  The OpenSearch instance endpoint minus the http scheme, e.g.                                                   │
-│                      'search-timdex-env-1234567890.us-east-1.es.amazonaws.com'. If not provided, will attempt to get from the       │
-│                      TIMDEX_OPENSEARCH_ENDPOINT environment variable. Defaults to 'localhost'.                                      │
-│ --verbose  -v        Pass to log at debug level instead of info                                                                     │
-│ --help     -h        Show this message and exit.                                                                                    │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Get cluster-level information ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ ping            Ping OpenSearch and display information about the cluster.                                                          │
-│ indexes         Display summary information about all indexes in the cluster.                                                       │
-│ aliases         List OpenSearch aliases and their associated indexes.                                                               │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Index management commands ─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ create       Create a new index in the cluster.                                                                                     │
-│ delete       Delete an index.                                                                                                       │
-│ promote      Promote index as the primary alias and add it to any additional provided aliases.                                      │
-│ demote       Demote an index from all its associated aliases.                                                                       │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Bulk record processing commands ───────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ bulk-index                         Bulk index records into an index.                                                                │
-│ bulk-delete                        Bulk delete records from an index.                                                               │
-│ bulk-update                        Bulk update records from an index.                                                               │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ Usage: tim [OPTIONS] COMMAND [ARGS]...                                                                                           
+                                                                                                                                  
+ TIM provides commands for interacting with OpenSearch indexes.                                                                   
+ For more details on a specific command, run tim COMMAND -h.                                                                      
+                                                                                                                                  
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --url      -u  TEXT  The OpenSearch instance endpoint minus the http scheme, e.g.                                              │
+│                      'search-timdex-env-1234567890.us-east-1.es.amazonaws.com'. If not provided, will attempt to get from the  │
+│                      TIMDEX_OPENSEARCH_ENDPOINT environment variable. Defaults to 'localhost'.                                 │
+│ --verbose  -v        Pass to log at debug level instead of info                                                                │
+│ --help     -h        Show this message and exit.                                                                               │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Get cluster-level information ────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ping            Ping OpenSearch and display information about the cluster.                                                     │
+│ indexes         Display summary information about all indexes in the cluster.                                                  │
+│ aliases         List OpenSearch aliases and their associated indexes.                                                          │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Index management commands ────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ create       Create a new index in the cluster.                                                                                │
+│ delete       Delete an index.                                                                                                  │
+│ promote      Promote index as the primary alias and add it to any additional provided aliases.                                 │
+│ demote       Demote an index from all its associated aliases.                                                                  │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Bulk record processing commands ──────────────────────────────────────────────────────────────────────────────────────────────╮
+│ bulk-update                       Bulk update records for an index.                                                            │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
