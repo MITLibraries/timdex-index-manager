@@ -1,6 +1,7 @@
 import pytest
 import vcr
 from click.testing import CliRunner
+from timdex_dataset_api import TIMDEXDataset
 
 import tim.opensearch as tim_os
 
@@ -33,3 +34,38 @@ def test_opensearch_client():
 @pytest.fixture
 def runner():
     return CliRunner()
+
+
+@pytest.fixture
+def timdex_dataset() -> TIMDEXDataset:
+    td = TIMDEXDataset("tests/fixtures/dataset")
+    td.load()
+    return td
+
+
+@pytest.fixture
+def five_valid_index_libguides_records(timdex_dataset):
+    return timdex_dataset.read_transformed_records_iter(
+        run_id="85cfe316-089c-4639-a5af-c861a7321493"
+    )
+
+
+@pytest.fixture
+def one_invalid_index_libguides_records(timdex_dataset):
+    return timdex_dataset.read_transformed_records_iter(
+        run_id="21e7f272-7b96-480c-9c25-36075355fc4c"
+    )
+
+
+@pytest.fixture
+def one_valid_delete_libguides_records(timdex_dataset):
+    return timdex_dataset.read_transformed_records_iter(
+        run_id="59d938b9-df61-481b-bec9-9d9eb8fbf21c"
+    )
+
+
+@pytest.fixture
+def one_valid_delete_libguides_records_not_found(timdex_dataset):
+    return timdex_dataset.read_transformed_records_iter(
+        run_id="3718935d-2bc0-4385-919e-c7a83238215e"
+    )

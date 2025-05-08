@@ -24,6 +24,7 @@ pytest = "*"
 ruff = "*"
 vcrpy = "*"
 pip-audit = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.12"

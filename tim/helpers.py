@@ -2,8 +2,6 @@ from collections.abc import Generator, Iterator
 from datetime import UTC, datetime
 
 import click
-import ijson
-import smart_open
 
 from tim import opensearch as tim_os
 from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
@@ -59,28 +57,6 @@ def generate_bulk_actions(
 
 def get_source_from_index(index_name: str) -> str:
     return index_name.split("-")[0]
-
-
-def parse_records(filepath: str) -> Generator[dict, None, None]:
-    """Open an input JSON file, iterate through it and yield one record at a time.
-
-    This function expects that the input file contains an array of objects
-    representing individual records in our standard TIMDEX record JSON format.
-    """
-    with smart_open.open(filepath, "rb") as json_input:
-        for item in ijson.items(json_input, "item"):  # noqa: UP028
-            yield item
-
-
-def parse_deleted_records(filepath: str) -> Generator[dict, None, None]:
-    """Open an input file, iterate through it and yield one deleted record at a time.
-
-    This function expects that the input file contains a list of TIMDEX record IDs, one
-    per line in the file.
-    """
-    with smart_open.open(filepath, "r") as file_input:
-        for item in file_input.readlines():
-            yield {"timdex_record_id": item.rstrip()}
 
 
 def validate_bulk_cli_options(

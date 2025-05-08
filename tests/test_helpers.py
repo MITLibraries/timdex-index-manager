@@ -66,22 +66,6 @@ def test_get_source_from_index_without_dash():
     assert helpers.get_source_from_index("testsource") == "testsource"
 
 
-def test_parse_records():
-    records = list(helpers.parse_records("tests/fixtures/sample_records.json"))
-    n_sample_records = 6
-    assert len(records) == n_sample_records
-    assert isinstance(records[0], dict)
-
-
-def test_parse_deleted_records():
-    records = list(
-        helpers.parse_deleted_records("tests/fixtures/sample_deleted_records.txt")
-    )
-    n_sample_deleted_records = 3
-    assert len(records) == n_sample_deleted_records
-    assert isinstance(records[0], dict)
-
-
 def test_validate_bulk_cli_options_neither_index_nor_source_passed(
     test_opensearch_client,
 ):

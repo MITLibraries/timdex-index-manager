@@ -1,130 +1,28 @@
 interactions:
 - request:
-    body: '{"delete":{"_id":"mit:alma:990026671500206761","_index":"alma-2022-09-01t00-00-00"}}
-
-      {"delete":{"_id":"mit:alma:990027672770206761","_index":"alma-2022-09-01t00-00-00"}}
-
-      {"delete":{"_id":"mit:alma:9933052979806761","_index":"alma-2022-09-01t00-00-00"}}
+    body: '{"delete":{"_id":"libguides:guides-175855","_index":"test-index"}}
 
       '
     headers:
       Content-Length:
-      - '253'
+      - '67'
       content-type:
       - application/json
       user-agent:
-      - opensearch-py/2.0.1 (Python 3.10.8)
+      - opensearch-py/2.8.0 (Python 3.12.2)
     method: POST
     uri: http://localhost:9200/_bulk
   response:
     body:
-      string: '{"took":14,"errors":false,"items":[{"delete":{"_index":"alma-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:990026671500206761","_version":2,"result":"deleted","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":24,"_primary_term":1,"status":200}},{"delete":{"_index":"alma-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:990027672770206761","_version":2,"result":"deleted","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":25,"_primary_term":1,"status":200}},{"delete":{"_index":"alma-2022-09-01t00-00-00","_type":"_doc","_id":"mit:alma:9933052979806761","_version":2,"result":"deleted","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":26,"_primary_term":1,"status":200}}]}'
+      string: '{"took":43,"errors":false,"items":[{"delete":{"_index":"test-index","_id":"libguides:guides-175855","_version":3,"result":"deleted","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":12,"_primary_term":1,"status":200}}]}'
     headers:
       content-length:
-      - '706'
+      - '227'
       content-type:
       - application/json; charset=UTF-8
     status:
       code: 200
       message: OK
-- request:
-    body: !!binary |
-      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
-    headers:
-      Content-Encoding:
-      - gzip
-      Content-Type:
-      - application/json
-      User-Agent:
-      - sentry.python/1.12.1
-      X-Sentry-Auth:
-      - Sentry sentry_key=1234567890, sentry_version=7, sentry_client=sentry.python/1.12.1
-    method: POST
-    uri: https://00000.ingest.sentry.io/api/123456/store/
-  response:
-    body:
-      string: "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404
-        Not Found</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n"
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Length:
-      - '146'
-      Content-Type:
-      - text/html
-      Date:
-      - Thu, 12 Jan 2023 19:24:28 GMT
-      Server:
-      - nginx
-      Via:
-      - 1.1 google
-    status:
-      code: 404
-      message: Not Found
 - request:
     body: null
     headers:
@@ -133,9 +31,9 @@ interactions:
       content-type:
       - application/json
       user-agent:
-      - opensearch-py/2.0.1 (Python 3.10.8)
+      - opensearch-py/2.8.0 (Python 3.12.2)
     method: POST
-    uri: http://localhost:9200/alma-2022-09-01t00-00-00/_refresh
+    uri: http://localhost:9200/test-index/_refresh
   response:
     body:
       string: '{"_shards":{"total":2,"successful":1,"failed":0}}'
