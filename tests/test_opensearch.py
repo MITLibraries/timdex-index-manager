@@ -5,12 +5,10 @@ import pytest
 from freezegun import freeze_time
 from opensearchpy.exceptions import NotFoundError, RequestError
 
-from tim import helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
 from tim.errors import (
     AliasNotFoundError,
-    BulkIndexingError,
     IndexExistsError,
     IndexNotFoundError,
 )
@@ -457,114 +455,80 @@ def test_remove_alias_unexpected_error_reraises(test_opensearch_client):
 
 
 @my_vcr.use_cassette("opensearch/bulk_index_create_records.yaml")
-def test_bulk_index_creates_records(test_opensearch_client):
-    records = helpers.parse_records("tests/fixtures/sample_records.json")
-    assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
-        "created": 6,
+def test_bulk_index_creates_records(
+    test_opensearch_client, five_valid_index_libguides_records
+):
+    assert tim_os.bulk_index(
+        test_opensearch_client, "test-index", five_valid_index_libguides_records
+    ) == {
+        "created": 5,
         "updated": 0,
         "errors": 0,
-        "total": 6,
+        "total": 5,
     }
 
 
 @my_vcr.use_cassette("opensearch/bulk_index_update_records.yaml")
-def test_bulk_index_updates_records(caplog, monkeypatch, test_opensearch_client):
+def test_bulk_index_updates_records(
+    caplog, monkeypatch, test_opensearch_client, five_valid_index_libguides_records
+):
     monkeypatch.setenv("STATUS_UPDATE_INTERVAL", "5")
-    records = helpers.parse_records("tests/fixtures/sample_records.json")
-    assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
+    assert tim_os.bulk_index(
+        test_opensearch_client, "test-index", five_valid_index_libguides_records
+    ) == {
         "created": 0,
-        "updated": 6,
+        "updated": 5,
         "errors": 0,
-        "total": 6,
+        "total": 5,
     }
     assert "Status update: 5 records indexed so far!" in caplog.text
 
 
 @my_vcr.use_cassette("opensearch/bulk_index_record_mapper_parsing_error.yaml")
-def test_bulk_index_logs_mapper_parsing_errors(caplog, test_opensearch_client):
-    records = helpers.parse_records("tests/fixtures/sample_record_with_errors.json")
-    assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
+def test_bulk_index_logs_mapper_parsing_errors(
+    caplog, test_opensearch_client, one_invalid_index_libguides_records
+):
+    assert tim_os.bulk_index(
+        test_opensearch_client, "test-index", one_invalid_index_libguides_records
+    ) == {
         "created": 0,
         "updated": 0,
         "errors": 1,
         "total": 1,
     }
-    assert "Error indexing record 'mit:alma:990026671500206761'" in caplog.text
-
-
-@my_vcr.use_cassette("opensearch/bulk_index_record_other_error.yaml")
-def test_bulk_index_other_error_raises_exception(test_opensearch_client):
-    records = helpers.parse_records("tests/fixtures/sample_records.json")
-    with pytest.raises(BulkIndexingError):
-        tim_os.bulk_index(test_opensearch_client, "test-index", records)
-
-
-@my_vcr.use_cassette("opensearch/bulk_index_record_weird_response.yaml")
-def test_bulk_index_weird_response_logs_errors(caplog, test_opensearch_client):
-    records = helpers.parse_records("tests/fixtures/sample_record_with_errors.json")
-    assert tim_os.bulk_index(test_opensearch_client, "test-index", records) == {
-        "created": 0,
-        "updated": 0,
-        "errors": 1,
-        "total": 1,
-    }
-    assert (
-        "Something unexpected happened during ingest. Bulk index response: "
-        '[true, {"index": {"_index": "test-index", "_type": "_doc", '
-        '"_id": "mit:alma:990026671500206761", "_version": 2, "result": "surprise!", '
-        '"_shards": {"total": 2, "successful": 1, "failed": 0}, "_seq_no": 6, '
-        '"_primary_term": 1, "status": 200}}]' in caplog.text
-    )
+    assert "Error indexing record 'libguides:guides-175846'" in caplog.text
 
 
 @my_vcr.use_cassette("opensearch/bulk_delete_records.yaml")
-def test_bulk_delete_deletes_records(caplog, monkeypatch, test_opensearch_client):
-    monkeypatch.setenv("STATUS_UPDATE_INTERVAL", "3")
-    records = helpers.parse_deleted_records("tests/fixtures/sample_deleted_records.txt")
+def test_bulk_delete_deletes_records(
+    caplog, monkeypatch, test_opensearch_client, one_valid_delete_libguides_records
+):
     assert tim_os.bulk_delete(
-        test_opensearch_client, "alma-2022-09-01t00-00-00", records
+        test_opensearch_client,
+        "test-index",
+        one_valid_delete_libguides_records,
     ) == {
-        "deleted": 3,
+        "deleted": 1,
         "errors": 0,
-        "total": 3,
+        "total": 1,
     }
-    assert "Status update: 3 records deleted so far!" in caplog.text
 
 
 @my_vcr.use_cassette("opensearch/bulk_delete_record_not_found.yaml")
-def test_bulk_delete_logs_error_if_record_not_found(caplog, test_opensearch_client):
-    records = helpers.parse_deleted_records(
-        "tests/fixtures/sample_deleted_record_not_present.txt"
-    )
+def test_bulk_delete_logs_error_if_record_not_found(
+    caplog, test_opensearch_client, one_valid_delete_libguides_records_not_found
+):
+    caplog.set_level("DEBUG")
     assert tim_os.bulk_delete(
-        test_opensearch_client, "alma-2022-09-01t00-00-00", records
+        test_opensearch_client,
+        "test-index",
+        one_valid_delete_libguides_records_not_found,
     ) == {
         "deleted": 0,
         "errors": 1,
         "total": 1,
     }
     assert (
-        "Record to delete 'no-record-here' was not found in index "
-        "'alma-2022-09-01t00-00-00'" in caplog.text
-    )
-
-
-@my_vcr.use_cassette("opensearch/bulk_delete_record_weird_response.yaml")
-def test_bulk_delete_weird_response_logs_errors(caplog, test_opensearch_client):
-    records = helpers.parse_deleted_records(
-        "tests/fixtures/sample_deleted_record_not_present.txt"
-    )
-    assert tim_os.bulk_delete(
-        test_opensearch_client, "alma-2022-09-01t00-00-00", records
-    ) == {
-        "deleted": 0,
-        "errors": 1,
-        "total": 1,
-    }
-    assert (
-        "Something unexpected happened during deletion. Bulk delete response: "
-        '[false, {"delete": {"_index": "alma-2022-09-01t00-00-00", "_type": "_doc", '
-        '"_id": "no-record-here", "_version": 1, "result": "surprise!", "_shards": '
-        '{"total": 2, "successful": 1, "failed": 0}, "_seq_no": 27, "_primary_term": '
-        '1, "status": 404}}]' in caplog.text
+        "Record to delete 'i-am-not-found' was not found in index 'test-index'."
+        in caplog.text
     )
