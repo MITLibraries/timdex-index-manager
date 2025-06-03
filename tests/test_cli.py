@@ -75,7 +75,7 @@ def test_ping(runner):
 def test_create_index_neither_name_nor_source_passed(runner):
     result = runner.invoke(main, ["create"])
     assert result.exit_code == EXIT_CODES["invalid_command"]
-    assert "Must provide either a name or source for the new index." in result.stdout
+    assert "Must provide either a name or source for the new index." in result.stderr
 
 
 def test_create_index_name_and_source_passed(runner):
@@ -86,7 +86,7 @@ def test_create_index_name_and_source_passed(runner):
     assert result.exit_code == EXIT_CODES["invalid_command"]
     assert (
         "Only one of --index and --source options is allowed, not both."
-        in escape_ansi(result.stdout)
+        in escape_ansi(result.stderr)
     )
 
 
