@@ -18,23 +18,24 @@ TIMDEX! Index Manager (TIM) is a Python CLI application for managing TIMDEX indi
 
 1. Run the following command:
 
-    ``` bash
-    docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
-    -e "plugins.security.disabled=true" \
-    opensearchproject/opensearch:2.11.1
-    ```
+``` bash
+docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
+-e "plugins.security.disabled=true" \
+opensearchproject/opensearch:2.11.1
+```
 
 2. To confirm the instance is up, run `pipenv run tim -u localhost ping` or visit http://localhost:9200/. This should produce a log that looks like the following:
-    ```
-    2024-02-08 13:22:16,826 INFO tim.cli.main(): OpenSearch client configured for endpoint 'localhost'
+ 
+```text
+2024-02-08 13:22:16,826 INFO tim.cli.main(): OpenSearch client configured for endpoint 'localhost'
 
-    Name: docker-cluster
-    UUID: RVCmwQ_LQEuh1GrtwGnRMw
-    OpenSearch version: 2.11.1
-    Lucene version: 9.7.0
+Name: docker-cluster
+UUID: RVCmwQ_LQEuh1GrtwGnRMw
+OpenSearch version: 2.11.1
+Lucene version: 9.7.0
 
-    2024-02-08 13:22:16,930 INFO tim.cli.log_process_time(): Total time to complete process: 0:00:00.105506
-    ```
+2024-02-08 13:22:16,930 INFO tim.cli.log_process_time(): Total time to complete process: 0:00:00.105506
+```
 
 ### Running Opensearch and OpenSearch Dashboards locally with Docker
 
@@ -42,14 +43,23 @@ You can use the included Docker Compose file ([compose.yaml](compose.yaml)) to s
 
 **Note:** To use Discover, you'll need to create an index pattern. When creating the index pattern, decline the option to set a date field. When set, it detects a date field in our indices but then crashes trying to use it. When prompted, enter an index or alias to pull patterns from, and it will automatically be configured to work well enough for initial data exploration.
 
-1. Run the following command:
-    ```bash
-    docker pull opensearchproject/opensearch:latest
-    docker pull opensearchproject/opensearch-dashboards:latest
-    docker compose up
-    ```
+First, ensure the following environment variables are set:
 
-2. To confirm the instance is up, run `pipenv run tim -u localhost ping` or visit http://localhost:9200/.
+0. First, set some environment variables:
+
+```shell
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=SuperSecret42!
+```
+
+1. Run the following command:
+
+```shell
+docker pull opensearchproject/opensearch:latest
+docker pull opensearchproject/opensearch-dashboards:latest
+docker compose up
+```
+
+2. To confirm the instance is up, run `pipenv run tim ping` or visit http://localhost:9200/.
 
 3. Access OpenSearch Dashboards through <http://localhost:5601>.
 
@@ -60,25 +70,28 @@ For a more detailed example with test data, please refer to the Confluence docum
 1. Follow the instructions in either [Running Opensearch locally with Docker](#running-opensearch-locally-with-docker) or [Running Opensearch and OpenSearch Dashboards locally with Docker](#running-opensearch-and-opensearch-dashboards-locally-with-docker). 
 
 2. Open a new terminal, and create a new index. Copy the name of the created index printed to the terminal's output.
-    ```
-    pipenv run tim create -s <source-name>
-    ```
+
+```shell
+pipenv run tim create -s <source-name>
+```
 
 3. Copy the index name and promote the index to the alias.
 
-    ```
-    pipenv run tim promote -a <source-name> -i <index-name>
-    ```
+```shell
+pipenv run tim promote -a <source-name> -i <index-name>
+```
 
 4. Bulk index records from a specified directory (e.g., including S3).
-    ```
-    pipenv run tim bulk-index -s <source-name> <filepath-to-records>
-    ``` 
+
+```shell
+pipenv run tim bulk-index -s <source-name> <filepath-to-records>
+``` 
 
 5. After verifying that the bulk-index was successful, clean up your local OpenSearch instance by deleting the index.
-    ```
-    pipenv run tim delete -i <index-name>
-    ```
+
+```shell
+pipenv run tim delete -i <index-name>
+```
 
 ### Running OpenSearch on AWS
 
@@ -115,31 +128,32 @@ SENTRY_DSN=### If set to a valid Sentry DSN, enables Sentry exception monitoring
 All CLI commands can be run with `pipenv run`. 
 
 ```
- Usage: tim [OPTIONS] COMMAND [ARGS]...                                                                                           
-                                                                                                                                  
- TIM provides commands for interacting with OpenSearch indexes.                                                                   
- For more details on a specific command, run tim COMMAND -h.                                                                      
-                                                                                                                                  
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --url      -u  TEXT  The OpenSearch instance endpoint minus the http scheme, e.g.                                              │
-│                      'search-timdex-env-1234567890.us-east-1.es.amazonaws.com'. If not provided, will attempt to get from the  │
-│                      TIMDEX_OPENSEARCH_ENDPOINT environment variable. Defaults to 'localhost'.                                 │
-│ --verbose  -v        Pass to log at debug level instead of info                                                                │
-│ --help     -h        Show this message and exit.                                                                               │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Get cluster-level information ────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ ping            Ping OpenSearch and display information about the cluster.                                                     │
-│ indexes         Display summary information about all indexes in the cluster.                                                  │
-│ aliases         List OpenSearch aliases and their associated indexes.                                                          │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Index management commands ────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ create       Create a new index in the cluster.                                                                                │
-│ delete       Delete an index.                                                                                                  │
-│ promote      Promote index as the primary alias and add it to any additional provided aliases.                                 │
-│ demote       Demote an index from all its associated aliases.                                                                  │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Bulk record processing commands ──────────────────────────────────────────────────────────────────────────────────────────────╮
-│ bulk-update                       Bulk update records for an index.                                                            │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ Usage: tim [OPTIONS] COMMAND [ARGS]...                                                                                  
+                                                                                                                         
+ TIM provides commands for interacting with OpenSearch indexes.                                                          
+ For more details on a specific command, run tim COMMAND -h.                                                             
+                                                                                                                         
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --url      -u  TEXT  The OpenSearch instance endpoint minus the http scheme, e.g.                                     │
+│                      'search-timdex-env-1234567890.us-east-1.es.amazonaws.com'. If not provided, will attempt to get  │
+│                      from the TIMDEX_OPENSEARCH_ENDPOINT environment variable. Defaults to 'localhost'.               │
+│ --verbose  -v        Pass to log at debug level instead of info                                                       │
+│ --help     -h        Show this message and exit.                                                                      │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Get cluster-level information ───────────────────────────────────────────────────────────────────────────────────────╮
+│ ping           Ping OpenSearch and display information about the cluster.                                             │
+│ indexes        Display summary information about all indexes in the cluster.                                          │
+│ aliases        List OpenSearch aliases and their associated indexes.                                                  │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Index management commands ───────────────────────────────────────────────────────────────────────────────────────────╮
+│ create      Create a new index in the cluster.                                                                        │
+│ delete      Delete an index.                                                                                          │
+│ promote     Promote index as the primary alias and add it to any additional provided aliases.                         │
+│ demote      Demote an index from all its associated aliases.                                                          │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Bulk record processing commands ─────────────────────────────────────────────────────────────────────────────────────╮
+│ bulk-update          Bulk update records for an index.                                                                │
+│ reindex-source       Perform a full refresh for a source in Opensearch for all current records.                       │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 

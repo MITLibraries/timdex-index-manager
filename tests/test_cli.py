@@ -278,3 +278,44 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
         f'{{"index": {json.dumps(index_results_default)}, '
         f'"delete": {json.dumps(mock_bulk_delete())}}}' in caplog.text
     )
+
+
+@patch("tim.opensearch.create_index")
+@patch("tim.opensearch.promote_index")
+@patch("tim.opensearch.get_index_aliases")
+@patch("timdex_dataset_api.dataset.TIMDEXDataset.load")
+@patch("tim.opensearch.bulk_index")
+def test_reindex_source_success(
+    mock_bulk_index,
+    mock_timdex_dataset,
+    mock_get_index_aliases,
+    mock_promote_index,
+    mock_create_index,
+    caplog,
+    monkeypatch,
+    runner,
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    mock_get_index_aliases.return_value = ["alma", "all-current", "timdex"]
+    mock_bulk_index.return_value = {
+        "created": 1000,
+        "updated": 0,
+        "errors": 0,
+        "total": 1000,
+    }
+    mock_timdex_dataset.return_value = MagicMock()
+
+    result = runner.invoke(
+        main,
+        [
+            "reindex-source",
+            "--source",
+            "alma",
+            "s3://test-timdex-bucket/dataset",
+        ],
+    )
+    assert result.exit_code == EXIT_CODES["success"]
+    assert (
+        "Reindex source complete: "
+        f'{{"index": {json.dumps(mock_bulk_index())}' in caplog.text
+    )
