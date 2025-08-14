@@ -38,9 +38,7 @@ def runner():
 
 @pytest.fixture
 def timdex_dataset() -> TIMDEXDataset:
-    td = TIMDEXDataset("tests/fixtures/dataset")
-    td.load()
-    return td
+    return TIMDEXDataset("tests/fixtures/dataset")
 
 
 @pytest.fixture
