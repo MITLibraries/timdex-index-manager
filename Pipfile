@@ -7,7 +7,7 @@ name = "pypi"
 boto3 = "*"
 click = "*"
 ijson = "*"
-opensearch-py = "*"
+opensearch-py = "<3.0"
 rich-click = "*"
 sentry-sdk = "*"
 smart-open = {extras = ["s3"], version = "*"}

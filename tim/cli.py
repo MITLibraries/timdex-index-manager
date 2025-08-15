@@ -300,17 +300,25 @@ def bulk_update(
     delete_results = {"deleted": 0, "errors": 0, "total": 0}
 
     td = TIMDEXDataset(location=dataset_path)
-    td.load(run_date=run_date, run_id=run_id)
 
     # bulk index records
-    records_to_index = td.read_transformed_records_iter(action="index")
+    records_to_index = td.read_transformed_records_iter(
+        run_date=run_date,
+        run_id=run_id,
+        action="index",
+    )
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
     except BulkIndexingError as exception:
         logger.info(f"Bulk indexing failed: {exception}")
 
     # bulk delete records
-    records_to_delete = td.read_dicts_iter(columns=["timdex_record_id"], action="delete")
+    records_to_delete = td.read_dicts_iter(
+        columns=["timdex_record_id"],
+        run_date=run_date,
+        run_id=run_id,
+        action="delete",
+    )
     delete_results.update(tim_os.bulk_delete(client, index, records_to_delete))
 
     summary_results = {"index": index_results, "delete": delete_results}
@@ -373,10 +381,13 @@ def reindex_source(
     index_results = {"created": 0, "updated": 0, "errors": 0, "total": 0}
 
     td = TIMDEXDataset(location=dataset_path)
-    td.load(current_records=True, source=source)
 
     # bulk index records
-    records_to_index = td.read_transformed_records_iter(action="index")
+    records_to_index = td.read_transformed_records_iter(
+        table="current_records",
+        source=source,
+        action="index",
+    )
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
     except BulkIndexingError as exception:
