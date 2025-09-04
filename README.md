@@ -21,7 +21,7 @@ TIMDEX! Index Manager (TIM) is a Python CLI application for managing TIMDEX indi
 ``` bash
 docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
 -e "plugins.security.disabled=true" \
-opensearchproject/opensearch:2.11.1
+opensearchproject/opensearch:2
 ```
 
 2. To confirm the instance is up, run `pipenv run tim -u localhost ping` or visit http://localhost:9200/. This should produce a log that looks like the following:
@@ -54,8 +54,8 @@ OPENSEARCH_INITIAL_ADMIN_PASSWORD=SuperSecret42!
 1. Run the following command:
 
 ```shell
-docker pull opensearchproject/opensearch:latest
-docker pull opensearchproject/opensearch-dashboards:latest
+docker pull opensearchproject/opensearch:2
+docker pull opensearchproject/opensearch-dashboards:2
 docker compose up
 ```
 
