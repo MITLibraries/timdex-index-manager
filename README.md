@@ -67,30 +67,51 @@ For a more detailed example with test data, please refer to the Confluence docum
 
 ### Index records into local OpenSearch Docker container
 
-1. Follow the instructions in either [Running Opensearch locally with Docker](#running-opensearch-locally-with-docker) or [Running Opensearch and OpenSearch Dashboards locally with Docker](#running-opensearch-and-opensearch-dashboards-locally-with-docker). 
+This CLI provides a couple of ways to index records into a local Opensearch instance:
 
-2. Open a new terminal, and create a new index. Copy the name of the created index printed to the terminal's output.
+1. A step-by-step approach that mirrors the actions in the TIMDEX ETL StepFunction
+2. A single, convenience command that fully reindexes a source
+
+For both, first follow the instructions in either [Running Opensearch locally with Docker](#running-opensearch-locally-with-docker) or [Running Opensearch and OpenSearch Dashboards locally with Docker](#running-opensearch-and-opensearch-dashboards-locally-with-docker), and then open a new terminal for the following commands.
+
+#### Option 1: Step-by-Step Bulk Index
+
+1.  Create a new index. Copy the name of the created index printed to the terminal's output.
 
 ```shell
 pipenv run tim create -s <source-name>
 ```
 
-3. Copy the index name and promote the index to the alias.
+2. Copy the index name and promote the index to the alias.
 
 ```shell
 pipenv run tim promote -a <source-name> -i <index-name>
 ```
 
-4. Bulk index records from a specified directory (e.g., including S3).
+3. Bulk index records from a TIMDEX dataset (can be local or from S3).
 
 ```shell
-pipenv run tim bulk-index -s <source-name> <filepath-to-records>
+pipenv run tim bulk-index \
+--source <source-name> \
+--run-id <run-id> \
+--run-date <YYYY-MM-DD-run-date> \
+<dataset-location>
 ``` 
 
-5. After verifying that the bulk-index was successful, clean up your local OpenSearch instance by deleting the index.
+4. After verifying that the bulk-index was successful, clean up your local OpenSearch instance by deleting the index.
 
 ```shell
 pipenv run tim delete -i <index-name>
+```
+
+#### Option 2: Fully Reindex a Source
+
+1. Utilize the CLI command `reindex-source`:
+
+```shell
+pipenv run tim --verbose reindex-source \
+--source <source-name> \
+<dataset-location>
 ```
 
 ### Running OpenSearch on AWS
