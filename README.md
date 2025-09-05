@@ -69,12 +69,22 @@ For a more detailed example with test data, please refer to the Confluence docum
 
 This CLI provides a couple of ways to index records into a local Opensearch instance:
 
-1. A step-by-step approach that mirrors the actions in the TIMDEX ETL StepFunction
-2. A single, convenience command that fully reindexes a source
+1. **[Easy]**: A single, convenience command that fully reindexes a source.  Only the `source` is needed.
+2. **[Advanced]**: A step-by-step approach that mirrors the actions in the TIMDEX ETL StepFunction.  While you have more control over the indexing process, you will need to know the `source`, `run_id`, and `run_date` of the records you want to index.
 
 For both, first follow the instructions in either [Running Opensearch locally with Docker](#running-opensearch-locally-with-docker) or [Running Opensearch and OpenSearch Dashboards locally with Docker](#running-opensearch-and-opensearch-dashboards-locally-with-docker), and then open a new terminal for the following commands.
 
-#### Option 1: Step-by-Step Bulk Index
+#### Option 1: Fully Reindex a Source (Easy)
+
+1. Utilize the CLI command `reindex-source`:
+
+```shell
+pipenv run tim --verbose reindex-source \
+--source <source-name> \
+<dataset-location>
+```
+
+#### Option 2: Step-by-Step Bulk Index (Advanced)
 
 1.  Create a new index. Copy the name of the created index printed to the terminal's output.
 
@@ -102,16 +112,6 @@ pipenv run tim bulk-index \
 
 ```shell
 pipenv run tim delete -i <index-name>
-```
-
-#### Option 2: Fully Reindex a Source
-
-1. Utilize the CLI command `reindex-source`:
-
-```shell
-pipenv run tim --verbose reindex-source \
---source <source-name> \
-<dataset-location>
 ```
 
 ### Running OpenSearch on AWS
