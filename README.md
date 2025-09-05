@@ -21,7 +21,7 @@ TIMDEX! Index Manager (TIM) is a Python CLI application for managing TIMDEX indi
 ``` bash
 docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
 -e "plugins.security.disabled=true" \
-opensearchproject/opensearch:2.11.1
+opensearchproject/opensearch:2
 ```
 
 2. To confirm the instance is up, run `pipenv run tim -u localhost ping` or visit http://localhost:9200/. This should produce a log that looks like the following:
@@ -54,8 +54,8 @@ OPENSEARCH_INITIAL_ADMIN_PASSWORD=SuperSecret42!
 1. Run the following command:
 
 ```shell
-docker pull opensearchproject/opensearch:latest
-docker pull opensearchproject/opensearch-dashboards:latest
+docker pull opensearchproject/opensearch:2
+docker pull opensearchproject/opensearch-dashboards:2
 docker compose up
 ```
 
@@ -67,27 +67,48 @@ For a more detailed example with test data, please refer to the Confluence docum
 
 ### Index records into local OpenSearch Docker container
 
-1. Follow the instructions in either [Running Opensearch locally with Docker](#running-opensearch-locally-with-docker) or [Running Opensearch and OpenSearch Dashboards locally with Docker](#running-opensearch-and-opensearch-dashboards-locally-with-docker). 
+This CLI provides a couple of ways to index records into a local Opensearch instance:
 
-2. Open a new terminal, and create a new index. Copy the name of the created index printed to the terminal's output.
+1. **[Easy]**: A single, convenience command that fully reindexes a source.  Only the `source` is needed.
+2. **[Advanced]**: A step-by-step approach that mirrors the actions in the TIMDEX ETL StepFunction.  While you have more control over the indexing process, you will need to know the `source`, `run_id`, and `run_date` of the records you want to index.
+
+For both, first follow the instructions in either [Running Opensearch locally with Docker](#running-opensearch-locally-with-docker) or [Running Opensearch and OpenSearch Dashboards locally with Docker](#running-opensearch-and-opensearch-dashboards-locally-with-docker), and then open a new terminal for the following commands.
+
+#### Option 1: Fully Reindex a Source (Easy)
+
+1. Utilize the CLI command `reindex-source`:
+
+```shell
+pipenv run tim --verbose reindex-source \
+--source <source-name> \
+<dataset-location>
+```
+
+#### Option 2: Step-by-Step Bulk Index (Advanced)
+
+1.  Create a new index. Copy the name of the created index printed to the terminal's output.
 
 ```shell
 pipenv run tim create -s <source-name>
 ```
 
-3. Copy the index name and promote the index to the alias.
+2. Copy the index name and promote the index to the alias.
 
 ```shell
 pipenv run tim promote -a <source-name> -i <index-name>
 ```
 
-4. Bulk index records from a specified directory (e.g., including S3).
+3. Bulk index records from a TIMDEX dataset (can be local or from S3).
 
 ```shell
-pipenv run tim bulk-index -s <source-name> <filepath-to-records>
+pipenv run tim bulk-index \
+--source <source-name> \
+--run-id <run-id> \
+--run-date <YYYY-MM-DD-run-date> \
+<dataset-location>
 ``` 
 
-5. After verifying that the bulk-index was successful, clean up your local OpenSearch instance by deleting the index.
+4. After verifying that the bulk-index was successful, clean up your local OpenSearch instance by deleting the index.
 
 ```shell
 pipenv run tim delete -i <index-name>
