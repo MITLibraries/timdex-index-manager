@@ -113,7 +113,7 @@ def ping(ctx: click.Context) -> None:
 @click.option(
     "-i",
     "--index",
-    callback=helpers.validate_index_name,
+    callback=helpers.validate_index_name,  # type: ignore[arg-type]
     help="Optional name to use for new index, must use the convention "
     "'source-YYYY-MM-DDthh-mm-ss'.",
 )
