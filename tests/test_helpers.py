@@ -54,7 +54,7 @@ def test_generate_bulk_actions_delete():
 def test_generate_bulk_actions_invalid_action_raises_error():
     records = [{"timdex_record_id": "12345", "other_fields": "some_data"}]
     actions = helpers.generate_bulk_actions("test-index", records, "wrong")
-    with pytest.raises(ValueError, match="Invalid action parameter"):
+    with pytest.raises(ValueError, match=r"Invalid action parameter"):
         next(actions)
 
 
@@ -70,14 +70,15 @@ def test_validate_bulk_cli_options_neither_index_nor_source_passed(
     test_opensearch_client,
 ):
     with pytest.raises(
-        UsageError, match="Must provide either an existing index name or a valid source."
+        UsageError, match=r"Must provide either an existing index name or a valid source."
     ):
         helpers.validate_bulk_cli_options(None, None, test_opensearch_client)
 
 
 def test_validate_bulk_cli_options_index_and_source_passed(test_opensearch_client):
     with pytest.raises(
-        UsageError, match="Only one of --index and --source options is allowed, not both."
+        UsageError,
+        match=r"Only one of --index and --source options is allowed, not both.",
     ):
         helpers.validate_bulk_cli_options(
             "index-name", "source-name", test_opensearch_client
@@ -87,7 +88,7 @@ def test_validate_bulk_cli_options_index_and_source_passed(test_opensearch_clien
 @my_vcr.use_cassette("helpers/bulk_cli_nonexistent_index.yaml")
 def test_validate_bulk_cli_options_nonexistent_index_passed(test_opensearch_client):
     with pytest.raises(
-        BadParameter, match="Index 'wrong' does not exist in the cluster."
+        BadParameter, match=r"Index 'wrong' does not exist in the cluster."
     ):
         helpers.validate_bulk_cli_options("wrong", None, test_opensearch_client)
 
@@ -97,8 +98,8 @@ def test_validate_bulk_cli_options_no_primary_index_for_source(test_opensearch_c
     with pytest.raises(
         BadParameter,
         match=(
-            "No index name was passed and there is no "
-            "primary-aliased index for source 'dspace'."
+            r"No index name was passed and there is no "
+            r"primary-aliased index for source 'dspace'."
         ),
     ):
         helpers.validate_bulk_cli_options(None, "dspace", test_opensearch_client)
