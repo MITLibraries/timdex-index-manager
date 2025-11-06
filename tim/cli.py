@@ -325,6 +325,90 @@ def bulk_update(
     logger.info(f"Bulk update complete: {json.dumps(summary_results)}")
 
 
+# Bulk update existing records with embeddings commands
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    help="Name of the index where the bulk update to add embeddings is performed.",
+)
+@click.option(
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help=(
+        "Source whose primary-aliased index will receive the bulk updated "
+        "records with embeddings."
+    ),
+)
+@click.option("-d", "--run-date", help="Run date, formatted as YYYY-MM-DD.")
+@click.option("-rid", "--run-id", help="Run ID.")
+@click.argument("dataset_path", type=click.Path())
+@click.pass_context
+def bulk_update_embeddings(
+    ctx: click.Context,
+    index: str,
+    source: str,
+    run_date: str,
+    run_id: str,
+    dataset_path: str,
+) -> None:
+    client = ctx.obj["CLIENT"]
+    index = helpers.validate_bulk_cli_options(index, source, client)
+
+    logger.info(
+        f"Bulk updating records with embeddings from dataset '{dataset_path}' "
+        f"into '{index}'"
+    )
+
+    update_results = {"updated": 0, "errors": 0, "total": 0}
+
+    td = TIMDEXDataset(location=dataset_path)
+
+    # TODO @ghukill: https://mitlibraries.atlassian.net/browse/USE-143 # noqa: FIX002
+    # Remove temporary code and replace with TDA
+    # method to read embeddings
+    # ==== START TEMPORARY CODE ====
+    # The code below reads transformed records from
+    # the TIMDEX dataset. To simulate embeddings,
+    # which are added to the record post-creation, a list
+    # of dicts containing only the 'timdex_record_id' and
+    # the new field (i.e., what would be the embedding fields)
+    # is created. For simulation purposes, the 'alternate_titles'
+    # field represents the new field as it is already added
+    # to the OpenSearch mapping in config/opensearch_mappings.json.
+    # When testing, the user is expected to pass in a source that
+    # does not set this field (e.g., libguides).
+    # Once TDA has been updated to read/write embeddings
+    # from/to the TIMDEX dataset, this code should be replaced
+    # with a simple call to read vector embeddings, which should
+    # return an iter of dicts representing the embeddings.
+    transformed_records = td.read_transformed_records_iter(
+        run_date=run_date,
+        run_id=run_id,
+        action="index",
+    )
+
+    records_to_update = iter(
+        [
+            {
+                "timdex_record_id": record["timdex_record_id"],
+                "alternate_titles": [{"kind": "Test", "value": "Test Alternate Title"}],
+            }
+            for record in transformed_records
+        ]
+    )
+    # ==== END TEMPORARY CODE ====
+    try:
+        update_results.update(tim_os.bulk_update(client, index, records_to_update))
+    except BulkIndexingError as exception:
+        logger.info(f"Bulk update with embeddings failed: {exception}")
+
+    logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
+
+
 @main.command()
 @click.option(
     "-s",
@@ -340,7 +424,12 @@ def bulk_update(
     help="Alias to promote the index to in addition to the primary alias. May "
     "be repeated to promote the index to multiple aliases at once.",
 )
-@click.argument("dataset_path", type=click.Path())
+@click.argument(
+    "dataset_path",
+    type=click.Path(),
+    help="Location of TIMDEX parquet dataset from which transformed records are read."
+    "This value can be a local filepath or an S3 URI.",
+)
 @click.pass_context
 def reindex_source(
     ctx: click.Context,
@@ -395,3 +484,7 @@ def reindex_source(
 
     summary_results = {"index": index_results}
     logger.info(f"Reindex source complete: {json.dumps(summary_results)}")
+
+
+if __name__ == "__main__":
+    main()
