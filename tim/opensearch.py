@@ -17,6 +17,7 @@ from tim.config import (
 from tim.errors import (
     AliasNotFoundError,
     BulkIndexingError,
+    BulkOperationError,
     IndexExistsError,
     IndexNotFoundError,
 )
@@ -370,6 +371,10 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
     If an error occurs during record indexing, it will be logged and bulk indexing will
     continue until all records have been processed.
 
+    NOTE: The update performed by the "index" action results in a full replacement of the
+    document in OpenSearch. If a partial record is provided, this will result in a new
+    document in OpenSearch containing only the fields provided in the partial record.
+
     Returns total sums of: records created, records updated, errors, and total records
     processed.
     """
@@ -411,5 +416,56 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
     response = client.indices.refresh(
         index=index,
     )
+    logger.debug(response)
+    return result
+
+
+def bulk_update(
+    client: OpenSearch, index: str, records: Iterator[dict]
+) -> dict[str, int]:
+    """Updates existing documents in the index using the streaming bulk helper.
+
+    This method uses the OpenSearch "update" action, which updates existing documents
+    and returns an error if the document does not exist. The "update" action can accept
+    a full or partial record and will only update the corresponding fields in the
+    document.
+
+    Returns total sums of: records updated, errors, and total records
+    processed.
+    """
+    result = {"updated": 0, "errors": 0, "total": 0}
+    actions = helpers.generate_bulk_actions(index, records, "update")
+    responses = streaming_bulk(
+        client,
+        actions,
+        max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
+        raise_on_error=False,
+    )
+    for response in responses:
+        if response[0] is False:
+            error = response[1]["update"]["error"]
+            record = response[1]["update"]["_id"]
+            if error["type"] == "mapper_parsing_exception":
+                logger.error(
+                    "Error updating record '%s'. Details: %s",
+                    record,
+                    json.dumps(error),
+                )
+                result["errors"] += 1
+            else:
+                raise BulkOperationError(
+                    "update", record, index, json.dumps(error)  # noqa: EM101
+                )
+        elif response[1]["update"].get("result") == "updated":
+            result["updated"] += 1
+        else:
+            logger.error(
+                "Something unexpected happened during update. Bulk update response: %s",
+                json.dumps(response),
+            )
+            result["errors"] += 1
+        result["total"] += 1
+        if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
+            logger.info("Status update: %s records updated so far!", result["total"])
     logger.debug(response)
     return result
