@@ -26,7 +26,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Bulk record processing commands",
-            "commands": ["bulk-update", "reindex-source"],
+            "commands": ["bulk-update", "bulk-update-embeddings", "reindex-source"],
         },
     ]
 }
@@ -355,6 +355,17 @@ def bulk_update_embeddings(
     run_id: str,
     dataset_path: str,
 ) -> None:
+    """Bulk update existing records with vector embeddings for an index.
+
+    Must provide either the name of an existing index in the cluster or a valid source.
+    If source is provided, it will update existing records for the primary-aliased
+    index for the source. If the provided index doesn't exist in the cluster, the
+    method will log an error and abort.
+
+    The method will read vector embeddings from a TIMDEXDataset
+    located at dataset_path using the 'timdex-dataset-api' library. The dataset
+    is filtered by run date and run ID.
+    """
     client = ctx.obj["CLIENT"]
     index = helpers.validate_bulk_cli_options(index, source, client)
 
