@@ -50,8 +50,13 @@ def generate_bulk_actions(
             "_index": index,
             "_id": record["timdex_record_id"],
         }
-        if action != "delete":
-            doc["_source"] = record
+
+        match action:
+            case "update":
+                doc["doc"] = record
+            case _ if action != "delete":
+                doc["_source"] = record
+
         yield doc
 
 
