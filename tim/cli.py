@@ -495,7 +495,3 @@ def reindex_source(
 
     summary_results = {"index": index_results}
     logger.info(f"Reindex source complete: {json.dumps(summary_results)}")
-
-
-if __name__ == "__main__":
-    main()
