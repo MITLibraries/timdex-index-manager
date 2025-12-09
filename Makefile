@@ -1,4 +1,5 @@
 ### This is the Terraform-generated header for timdex-index-manager-dev ###
+.PHONY: test
 ECR_NAME_DEV:=timdex-index-manager-dev
 ECR_URL_DEV:=222053980223.dkr.ecr.us-east-1.amazonaws.com/timdex-index-manager-dev
 ### End of Terraform-generated header ###
@@ -28,7 +29,7 @@ update: install # Update Python dependencies
 ######################
 
 test: # Run tests and print a coverage report
-	pipenv run coverage run --source=tim -m pytest -vv
+	pipenv run coverage run --source=tim -m pytest -vv 
 	pipenv run coverage report -m
 
 coveralls: test # Write coverage data to an LCOV report

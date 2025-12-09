@@ -132,6 +132,9 @@
       "edition": {
         "type": "text"
       },
+      "embedding_full_record": {
+        "type": "rank_features"
+      },
       "file_formats": {
         "type": "keyword",
         "normalizer": "lowercase"
