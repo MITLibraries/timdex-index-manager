@@ -1,0 +1,51 @@
+interactions:
+- request:
+    body: '{"update":{"_id":"libguides:guides-175846","_index":"test-index"}}
+
+      {"doc":{"timdex_record_id":"libguides:guides-175846","title":"Materials Science
+      & Engineering (UPDATED)"}}
+
+      '
+    headers:
+      Content-Length:
+      - '174'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.8.0 (Python 3.12.11)
+    method: POST
+    uri: http://localhost:9200/_bulk
+  response:
+    body:
+      string: '{"took":7,"errors":false,"items":[{"update":{"_index":"test-index-2025-12-11t16-58-08","_id":"libguides:guides-175846","_version":4,"result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":7,"_primary_term":1,"status":200}}]}'
+    headers:
+      content-length:
+      - '245'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Content-Length:
+      - '0'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.8.0 (Python 3.12.2)
+    method: POST
+    uri: http://localhost:9200/test-index/_refresh
+  response:
+    body:
+      string: '{"_shards":{"total":2,"successful":1,"failed":0}}'
+    headers:
+      content-length:
+      - '49'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+version: 1

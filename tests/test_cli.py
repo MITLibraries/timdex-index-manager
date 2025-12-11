@@ -2,10 +2,11 @@ import json
 import re
 from unittest.mock import patch
 
+import pytest
 from freezegun import freeze_time
 
 from tim.cli import main
-from tim.errors import BulkIndexingError
+from tim.errors import BulkIndexingError, BulkOperationError
 
 from .conftest import EXIT_CODES, my_vcr
 
@@ -272,6 +273,72 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
         f'{{"index": {json.dumps(index_results_default)}, '
         f'"delete": {json.dumps(mock_bulk_delete())}}}' in caplog.text
     )
+
+
+@pytest.mark.parametrize(
+    "bulk_update_return",
+    [
+        {"updated": 1, "errors": 0, "total": 1},
+        {"updated": 0, "errors": 1, "total": 1},
+    ],
+)
+@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.opensearch.bulk_update")
+def test_bulk_update_embeddings_logs_complete(
+    mock_bulk_update,
+    mock_validate_bulk_cli_options,
+    bulk_update_return,
+    caplog,
+    monkeypatch,
+    runner,
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    mock_bulk_update.return_value = bulk_update_return
+    mock_validate_bulk_cli_options.return_value = "libguides"
+
+    result = runner.invoke(
+        main,
+        [
+            "bulk-update-embeddings",
+            "--source",
+            "libguides",
+            "--run-id",
+            "85cfe316-089c-4639-a5af-c861a7321493",
+            "tests/fixtures/dataset",
+        ],
+    )
+
+    assert result.exit_code == EXIT_CODES["success"]
+    assert (
+        f"Bulk update with embeddings complete: {json.dumps(mock_bulk_update())}"
+        in caplog.text
+    )
+
+
+@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.opensearch.bulk_update")
+def test_bulk_update_embeddings_exit_bulk_operation_error(
+    mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    mock_bulk_update.side_effect = BulkOperationError(
+        action="update", record="alma:0", index="index", error="exception"
+    )
+    mock_validate_bulk_cli_options.return_value = "libguides"
+
+    result = runner.invoke(
+        main,
+        [
+            "bulk-update-embeddings",
+            "--source",
+            "libguides",
+            "--run-id",
+            "85cfe316-089c-4639-a5af-c861a7321493",
+            "tests/fixtures/dataset",
+        ],
+    )
+    assert result.exit_code == EXIT_CODES["error"]
+    assert "Bulk update with embeddings failed" in caplog.text
 
 
 @patch("tim.opensearch.create_index")

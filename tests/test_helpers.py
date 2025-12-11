@@ -51,6 +51,17 @@ def test_generate_bulk_actions_delete():
     }
 
 
+def test_generate_bulk_actions_update():
+    records = [{"timdex_record_id": "12345"}]
+    actions = helpers.generate_bulk_actions("test-index", records, "update")
+    assert next(actions) == {
+        "_op_type": "update",
+        "_index": "test-index",
+        "_id": "12345",
+        "doc": {"timdex_record_id": "12345"},
+    }
+
+
 def test_generate_bulk_actions_invalid_action_raises_error():
     records = [{"timdex_record_id": "12345", "other_fields": "some_data"}]
     actions = helpers.generate_bulk_actions("test-index", records, "wrong")
