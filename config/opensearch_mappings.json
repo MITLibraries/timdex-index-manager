@@ -33,6 +33,11 @@
     }
   },
   "mappings": {
+    "_source": {
+      "excludes": [
+        "fulltext"
+      ]
+    },
     "dynamic": "strict",
     "properties": {
       "alternate_titles": {
@@ -142,6 +147,10 @@
       "format": {
         "type": "keyword",
         "normalizer": "lowercase"
+      },
+      "fulltext": {
+        "type": "text",
+        "store": false
       },
       "funding_information": {
         "type": "nested",
