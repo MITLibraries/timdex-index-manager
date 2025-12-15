@@ -9,6 +9,7 @@ from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
 from tim.errors import (
     AliasNotFoundError,
+    BulkOperationError,
     IndexExistsError,
     IndexNotFoundError,
 )
@@ -532,3 +533,34 @@ def test_bulk_delete_logs_error_if_record_not_found(
         "Record to delete 'i-am-not-found' was not found in index 'test-index'."
         in caplog.text
     )
+
+
+@my_vcr.use_cassette("opensearch/bulk_update_updates_records.yaml")
+def test_bulk_update_updates_records(test_opensearch_client):
+    updates = [
+        {
+            "timdex_record_id": "libguides:guides-175846",
+            "title": "Materials Science & Engineering (UPDATED)",
+        }
+    ]
+    assert tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates)) == {
+        "updated": 1,
+        "errors": 0,
+        "total": 1,
+    }
+
+
+@my_vcr.use_cassette(
+    "opensearch/bulk_update_raises_bulk_operation_error_if_record_not_found.yaml"
+)
+def test_bulk_update_raises_bulk_operation_error_if_record_not_found(
+    test_opensearch_client,
+):
+    updates = [
+        {
+            "timdex_record_id": "i-am-not-found",
+            "title": "Materials Science & Engineering (UPDATED)",
+        }
+    ]
+    with pytest.raises(BulkOperationError):
+        tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates))

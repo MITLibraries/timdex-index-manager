@@ -352,7 +352,7 @@ def bulk_delete(
         result["total"] += 1
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records deleted so far!", result["total"])
-    logger.info("All records deleted, refreshing index.")
+    logger.info("Refreshing index.")
     response = client.indices.refresh(
         index=index,
     )
@@ -412,7 +412,7 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
         result["total"] += 1
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records indexed so far!", result["total"])
-    logger.info("All records ingested, refreshing index.")
+    logger.info("Refreshing index.")
     response = client.indices.refresh(
         index=index,
     )
@@ -467,5 +467,9 @@ def bulk_update(
         result["total"] += 1
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records updated so far!", result["total"])
+    logger.info("Refreshing index.")
+    response = client.indices.refresh(
+        index=index,
+    )
     logger.debug(response)
     return result

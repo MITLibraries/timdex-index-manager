@@ -1,0 +1,30 @@
+interactions:
+- request:
+    body: '{"update":{"_id":"i-am-not-found","_index":"test-index"}}
+
+      {"doc":{"timdex_record_id":"i-am-not-found","title":"Materials Science & Engineering
+      (UPDATED)"}}
+
+      '
+    headers:
+      Content-Length:
+      - '156'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.8.0 (Python 3.12.11)
+    method: POST
+    uri: http://localhost:9200/_bulk
+  response:
+    body:
+      string: '{"took":9,"errors":true,"items":[{"update":{"_index":"test-index-2025-12-11t16-58-08","_id":"i-am-not-found","status":404,"error":{"type":"document_missing_exception","reason":"[i-am-not-found]:
+        document missing","index":"test-index-2025-12-11t16-58-08","shard":"0","index_uuid":"in04_JvQS5qqCvUXeZta_g"}}}]}'
+    headers:
+      content-length:
+      - '308'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,3 +1,4 @@
+import json
 from collections.abc import Generator, Iterator
 from datetime import UTC, datetime
 
@@ -16,6 +17,22 @@ def confirm_action(input_prompt: str) -> bool:
         return False
     click.echo(f"Invalid input: '{check}', must be one of 'y' or 'n'.")
     return confirm_action(input_prompt)
+
+
+def format_embeddings(embeddings: Iterator[dict]) -> Iterator[dict]:
+    """Format embeddings for bulk update command.
+
+    This method yields a dict that maps the embedding to the
+    corresponding field in OpenSearch, using the 'embedding_strategy'
+    to form the field name and assigning 'embedding_object' as the value.
+    """
+    for embedding in embeddings:
+        yield {
+            "timdex_record_id": embedding["timdex_record_id"],
+            f"embedding_{embedding["embedding_strategy"]}": json.loads(
+                embedding["embedding_object"]
+            ),
+        }
 
 
 def generate_index_name(source: str) -> str:
