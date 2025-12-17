@@ -735,7 +735,7 @@
         },
         "timdex-dataset-api": {
             "git": "https://github.com/MITLibraries/timdex-dataset-api.git",
-            "ref": "184d87fd0647cae9e1db8488f2a3d88de96a7226"
+            "ref": "a1d8ad7662d8d864d1fb2b52376312c7c92e7398"
         },
         "typing-extensions": {
             "hashes": [
