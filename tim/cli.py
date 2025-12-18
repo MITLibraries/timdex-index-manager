@@ -430,11 +430,10 @@ def reindex_source(
 
     This CLI command performs the following:
         1. creates a new index for the source
-        2. promotes this index as the primary for the source alias, and added to any other
+        2. promotes this index as the primary for the source alias and add to any other
         aliases passed (e.g. 'timdex')
-        3. uses the TDA library to yield only current records from the parquet dataset
-        for the source
-        4. bulk index these records to the new Opensearch index
+        3. bulk index current records from the parquet dataset to the index
+        4. bulk update current embeddings (if any) from the parquet dataset to the index
 
     The net effect is a full refresh for a source in Opensearch, ensuring only current,
     non-deleted versions of records are used from the parquet dataset.
