@@ -344,9 +344,11 @@ def test_bulk_update_embeddings_exit_bulk_operation_error(
 @patch("tim.opensearch.create_index")
 @patch("tim.opensearch.promote_index")
 @patch("tim.opensearch.get_index_aliases")
+@patch("tim.opensearch.bulk_update")
 @patch("tim.opensearch.bulk_index")
 def test_reindex_source_success(
     mock_bulk_index,
+    mock_bulk_update,
     mock_get_index_aliases,
     mock_promote_index,
     mock_create_index,
@@ -361,6 +363,11 @@ def test_reindex_source_success(
         "updated": 0,
         "errors": 0,
         "total": 1000,
+    }
+    mock_bulk_update.return_value = {
+        "updated": 10,
+        "errors": 0,
+        "total": 10,
     }
 
     result = runner.invoke(

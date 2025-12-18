@@ -385,6 +385,7 @@ def bulk_update_embeddings(
             "embedding_object",
         ],
         run_id=run_id,
+        action="index",
     )
     embeddings_to_index = helpers.format_embeddings(embeddings)
 
@@ -429,11 +430,10 @@ def reindex_source(
 
     This CLI command performs the following:
         1. creates a new index for the source
-        2. promotes this index as the primary for the source alias, and added to any other
+        2. promotes this index as the primary for the source alias and add to any other
         aliases passed (e.g. 'timdex')
-        3. uses the TDA library to yield only current records from the parquet dataset
-        for the source
-        4. bulk index these records to the new Opensearch index
+        3. bulk index current records from the parquet dataset to the index
+        4. bulk update current embeddings (if any) from the parquet dataset to the index
 
     The net effect is a full refresh for a source in Opensearch, ensuring only current,
     non-deleted versions of records are used from the parquet dataset.
@@ -454,12 +454,11 @@ def reindex_source(
         tim_os.get_index_aliases(client, index),
     )
 
-    # perform bulk indexing of current records from source
-    index_results = {"created": 0, "updated": 0, "errors": 0, "total": 0}
-
+    # reindex current records from source
     td = TIMDEXDataset(location=dataset_path)
 
     # bulk index records
+    index_results = {"created": 0, "updated": 0, "errors": 0, "total": 0}
     records_to_index = td.read_transformed_records_iter(
         table="current_records",
         source=source,
@@ -468,7 +467,25 @@ def reindex_source(
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
     except BulkIndexingError as exception:
-        logger.info(f"Bulk indexing failed: {exception}")
+        logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
-    summary_results = {"index": index_results}
+    # bulk index embeddings
+    update_results = {"updated": 0, "errors": 0, "total": 0}
+    embeddings = td.embeddings.read_dicts_iter(
+        table="current_embeddings",
+        columns=[
+            "timdex_record_id",
+            "embedding_strategy",
+            "embedding_object",
+        ],
+        source=source,
+        action="index",
+    )
+    embeddings_to_index = helpers.format_embeddings(embeddings)
+    try:
+        update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
+    except BulkOperationError as exception:
+        logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
+
+    summary_results = {"index": index_results, "update": update_results}
     logger.info(f"Reindex source complete: {json.dumps(summary_results)}")
