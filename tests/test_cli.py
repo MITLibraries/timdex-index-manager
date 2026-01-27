@@ -341,6 +341,37 @@ def test_bulk_update_embeddings_exit_bulk_operation_error(
     assert "Bulk update with embeddings failed" in caplog.text
 
 
+@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.opensearch.bulk_update")
+def test_bulk_update_embeddings_source_only_logs_complete(
+    mock_bulk_update,
+    mock_validate_bulk_cli_options,
+    caplog,
+    monkeypatch,
+    runner,
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    bulk_update_return = {"updated": 1, "errors": 0, "total": 1}
+    mock_bulk_update.return_value = bulk_update_return
+    mock_validate_bulk_cli_options.return_value = "libguides"
+
+    result = runner.invoke(
+        main,
+        [
+            "bulk-update-embeddings",
+            "--source",
+            "libguides",
+            "tests/fixtures/dataset",
+        ],
+    )
+
+    assert result.exit_code == EXIT_CODES["success"]
+    assert (
+        f"Bulk update with embeddings complete: {json.dumps(bulk_update_return)}"
+        in caplog.text
+    )
+
+
 @patch("tim.opensearch.create_index")
 @patch("tim.opensearch.promote_index")
 @patch("tim.opensearch.get_index_aliases")

@@ -9,7 +9,6 @@ from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS
 from tim.errors import (
     AliasNotFoundError,
-    BulkOperationError,
     IndexExistsError,
     IndexNotFoundError,
 )
@@ -553,7 +552,8 @@ def test_bulk_update_updates_records(test_opensearch_client):
 @my_vcr.use_cassette(
     "opensearch/bulk_update_raises_bulk_operation_error_if_record_not_found.yaml"
 )
-def test_bulk_update_raises_bulk_operation_error_if_record_not_found(
+def test_bulk_update_records_error_record_not_found(
+    caplog,
     test_opensearch_client,
 ):
     updates = [
@@ -562,5 +562,10 @@ def test_bulk_update_raises_bulk_operation_error_if_record_not_found(
             "title": "Materials Science & Engineering (UPDATED)",
         }
     ]
-    with pytest.raises(BulkOperationError):
-        tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates))
+    results = tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates))
+    assert results["errors"] == 1
+    assert (
+        """Error updating record 'i-am-not-found'. """
+        """Details: {"type": "document_missing_exception", """
+        """"reason": "[i-am-not-found]: document missing","""
+    ) in caplog.text

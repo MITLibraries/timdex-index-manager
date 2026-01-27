@@ -445,7 +445,10 @@ def bulk_update(
         if response[0] is False:
             error = response[1]["update"]["error"]
             record = response[1]["update"]["_id"]
-            if error["type"] == "mapper_parsing_exception":
+            if error["type"] in [
+                "mapper_parsing_exception",
+                "document_missing_exception",
+            ]:
                 logger.error(
                     "Error updating record '%s'. Details: %s",
                     record,
