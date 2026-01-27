@@ -544,6 +544,7 @@ def test_bulk_update_updates_records(test_opensearch_client):
     ]
     assert tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates)) == {
         "updated": 1,
+        "skipped": 0,
         "errors": 0,
         "total": 1,
     }

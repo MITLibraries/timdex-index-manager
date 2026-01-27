@@ -377,8 +377,6 @@ def bulk_update_embeddings(
         f"into '{index}'"
     )
 
-    update_results = {"updated": 0, "errors": 0, "total": 0}
-
     td = TIMDEXDataset(location=dataset_path)
 
     # read embeddings for a specific run
@@ -409,12 +407,12 @@ def bulk_update_embeddings(
     embeddings_to_index = helpers.format_embeddings(embeddings)
 
     try:
-        update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
+        update_results = tim_os.bulk_update(client, index, embeddings_to_index)
+        logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
+
     except BulkOperationError as exception:
         logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
-
-    logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
 
 
 @main.command()

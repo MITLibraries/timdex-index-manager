@@ -433,7 +433,7 @@ def bulk_update(
     Returns total sums of: records updated, errors, and total records
     processed.
     """
-    result = {"updated": 0, "errors": 0, "total": 0}
+    result = {"updated": 0, "skipped": 0, "errors": 0, "total": 0}
     actions = helpers.generate_bulk_actions(index, records, "update")
     responses = streaming_bulk(
         client,
@@ -461,6 +461,8 @@ def bulk_update(
                 )
         elif response[1]["update"].get("result") == "updated":
             result["updated"] += 1
+        elif response[1]["update"].get("result") == "noop":
+            result["skipped"] += 1
         else:
             logger.error(
                 "Something unexpected happened during update. Bulk update response: %s",
