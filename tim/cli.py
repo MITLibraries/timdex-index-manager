@@ -339,11 +339,16 @@ def bulk_update(
     "--source",
     type=click.Choice(VALID_SOURCES),
     help=(
-        "Source whose primary-aliased index will receive the bulk updated "
-        "records with embeddings."
+        "Source whose primary-aliased index will receive the bulk updated records with "
+        "embeddings.  If --run-id is not passed, all current embeddings for this source "
+        "will be used."
     ),
 )
-@click.option("-rid", "--run-id", required=True, help="Run ID.")
+@click.option(
+    "-rid",
+    "--run-id",
+    help="Limit to embeddings for a specific TIMDEX ETL run.",
+)
 @click.argument("dataset_path", type=click.Path())
 @click.pass_context
 def bulk_update_embeddings(
@@ -372,30 +377,42 @@ def bulk_update_embeddings(
         f"into '{index}'"
     )
 
-    update_results = {"updated": 0, "errors": 0, "total": 0}
-
     td = TIMDEXDataset(location=dataset_path)
 
-    # bulk index embeddings
-    embeddings = td.embeddings.read_dicts_iter(
-        table="current_run_embeddings",
-        columns=[
-            "timdex_record_id",
-            "embedding_strategy",
-            "embedding_object",
-        ],
-        run_id=run_id,
-        action="index",
-    )
+    # read embeddings for a specific run
+    if run_id:
+        embeddings = td.embeddings.read_dicts_iter(
+            table="current_run_embeddings",
+            columns=[
+                "timdex_record_id",
+                "embedding_strategy",
+                "embedding_object",
+            ],
+            run_id=run_id,
+            action="index",
+        )
+    # default: read current embeddings for a source
+    else:
+        embeddings = td.embeddings.read_dicts_iter(
+            table="current_embeddings",
+            source=source,
+            columns=[
+                "timdex_record_id",
+                "embedding_strategy",
+                "embedding_object",
+            ],
+            action="index",
+        )
+
     embeddings_to_index = helpers.format_embeddings(embeddings)
 
     try:
-        update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
+        update_results = tim_os.bulk_update(client, index, embeddings_to_index)
+        logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
+
     except BulkOperationError as exception:
         logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
-
-    logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
 
 
 @main.command()
@@ -458,6 +475,7 @@ def reindex_source(
     td = TIMDEXDataset(location=dataset_path)
 
     # bulk index records
+    logger.info("Reindexing records.")
     index_results = {"created": 0, "updated": 0, "errors": 0, "total": 0}
     records_to_index = td.read_transformed_records_iter(
         table="current_records",
@@ -470,6 +488,7 @@ def reindex_source(
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk index embeddings
+    logger.info("Reindexing embeddings.")
     update_results = {"updated": 0, "errors": 0, "total": 0}
     embeddings = td.embeddings.read_dicts_iter(
         table="current_embeddings",

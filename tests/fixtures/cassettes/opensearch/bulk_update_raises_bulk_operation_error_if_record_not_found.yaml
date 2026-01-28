@@ -27,4 +27,26 @@ interactions:
     status:
       code: 200
       message: OK
+- request:
+    body: null
+    headers:
+      Content-Length:
+      - '0'
+      content-type:
+      - application/json
+      user-agent:
+      - opensearch-py/2.8.0 (Python 3.12.2)
+    method: POST
+    uri: http://localhost:9200/test-index/_refresh
+  response:
+    body:
+      string: '{"_shards":{"total":2,"successful":1,"failed":0}}'
+    headers:
+      content-length:
+      - '49'
+      content-type:
+      - application/json; charset=UTF-8
+    status:
+      code: 200
+      message: OK
 version: 1
