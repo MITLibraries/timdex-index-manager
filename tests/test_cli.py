@@ -415,3 +415,42 @@ def test_reindex_source_success(
         "Reindex source complete: "
         f'{{"index": {json.dumps(mock_bulk_index())}' in caplog.text
     )
+
+
+@patch("tim.opensearch.create_index")
+@patch("tim.opensearch.promote_index")
+@patch("tim.opensearch.get_index_aliases")
+@patch("tim.opensearch.bulk_update")
+@patch("tim.opensearch.bulk_index")
+def test_reindex_source_skip_embeddings(
+    mock_bulk_index,
+    mock_bulk_update,
+    mock_get_index_aliases,
+    mock_promote_index,
+    mock_create_index,
+    caplog,
+    monkeypatch,
+    runner,
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    mock_get_index_aliases.return_value = ["alma", "all-current", "timdex"]
+    mock_bulk_index.return_value = {
+        "created": 1000,
+        "updated": 0,
+        "errors": 0,
+        "total": 1000,
+    }
+
+    result = runner.invoke(
+        main,
+        [
+            "reindex-source",
+            "--source",
+            "alma",
+            "--skip-embeddings",
+            "tests/fixtures/dataset",
+        ],
+    )
+    assert result.exit_code == EXIT_CODES["success"]
+    assert "Skipping embeddings update." in caplog.text
+    mock_bulk_update.assert_not_called()

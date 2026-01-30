@@ -430,6 +430,12 @@ def bulk_update_embeddings(
     help="Alias to promote the index to in addition to the primary alias. May "
     "be repeated to promote the index to multiple aliases at once.",
 )
+@click.option(
+    "--skip-embeddings",
+    is_flag=True,
+    default=False,
+    help="Skip the secondary update of documents with embeddings.",
+)
 @click.argument(
     "dataset_path",
     type=click.Path(),
@@ -441,6 +447,7 @@ def reindex_source(
     ctx: click.Context,
     source: str,
     alias: tuple[str],
+    skip_embeddings: bool,  # noqa: FBT001
     dataset_path: str,
 ) -> None:
     """Perform a full refresh for a source in Opensearch for all current records.
@@ -488,23 +495,28 @@ def reindex_source(
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk index embeddings
-    logger.info("Reindexing embeddings.")
     update_results = {"updated": 0, "errors": 0, "total": 0}
-    embeddings = td.embeddings.read_dicts_iter(
-        table="current_embeddings",
-        columns=[
-            "timdex_record_id",
-            "embedding_strategy",
-            "embedding_object",
-        ],
-        source=source,
-        action="index",
-    )
-    embeddings_to_index = helpers.format_embeddings(embeddings)
-    try:
-        update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
-    except BulkOperationError as exception:
-        logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
+    if skip_embeddings:
+        logger.info("Skipping embeddings update.")
+    else:
+        logger.info("Reindexing embeddings.")
+        embeddings = td.embeddings.read_dicts_iter(
+            table="current_embeddings",
+            columns=[
+                "timdex_record_id",
+                "embedding_strategy",
+                "embedding_object",
+            ],
+            source=source,
+            action="index",
+        )
+        embeddings_to_index = helpers.format_embeddings(embeddings)
+        try:
+            update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
+        except BulkOperationError as exception:
+            logger.error(  # noqa: TRY400
+                f"Bulk update with embeddings failed: {exception}"
+            )
 
     summary_results = {"index": index_results, "update": update_results}
     logger.info(f"Reindex source complete: {json.dumps(summary_results)}")
