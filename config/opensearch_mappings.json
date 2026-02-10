@@ -33,11 +33,6 @@
     }
   },
   "mappings": {
-    "_source": {
-      "excludes": [
-        "fulltext"
-      ]
-    },
     "dynamic": "strict",
     "properties": {
       "alternate_titles": {
