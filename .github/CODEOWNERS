@@ -6,7 +6,7 @@
 # These owners will be the default owners for everything in the repo. This is commented
 # out in favor of using a team as the default (see below). It is left here as a comment
 # to indicate the primary expert for this code.
-# * @adamshire123
+# * @ghukill
 
 # Teams can be specified as code owners as well. Teams should be identified in
 # the format @org/team-name. Teams must have explicit write access to the
