@@ -78,7 +78,7 @@ def generate_bulk_actions(
 
 
 def get_source_from_index(index_name: str) -> str:
-    return index_name.split("-")[0]
+    return index_name.split("-", maxsplit=1)[0]
 
 
 def validate_bulk_cli_options(

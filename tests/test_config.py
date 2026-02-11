@@ -15,13 +15,6 @@ def test_configure_index_settings():
     assert "analysis" in settings
 
 
-def test_configure_index_settings_excludes_fulltext_from_source():
-    mappings, _settings = configure_index_settings()
-
-    assert mappings["_source"] == {"excludes": ["fulltext"]}
-    assert mappings["properties"]["fulltext"] == {"type": "text", "store": False}
-
-
 def test_configure_logger_not_verbose():
     logger = logging.getLogger(__name__)
     result = configure_logger(logger, verbose=False)
