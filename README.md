@@ -142,6 +142,7 @@ OPENSEARCH_REQUEST_TIMEOUT=### Only used for OpenSearch requests that tend to ta
 STATUS_UPDATE_INTERVAL=### The ingest process logs the # of records indexed every nth record. Set this env variable to any integer to change the frequency of logging status updates. Can be useful for development/debugging. Defaults to 1000 if not set.
 TIMDEX_OPENSEARCH_ENDPOINT=### If using a local Docker OpenSearch instance, this isn't needed. Otherwise set to OpenSearch instance endpoint without the http scheme (e.g., "search-timdex-env-1234567890.us-east-1.es.amazonaws.com"). Can also be passed directly to the CLI via the `--url` option.
 SENTRY_DSN=### If set to a valid Sentry DSN, enables Sentry exception monitoring This is not needed for local development.
+AUTH_SERVICE_TYPE=### Indicate instanced type for authentication; "es" (cluster) or "aoss" (serverless)
 ```
 
 ## CLI commands
