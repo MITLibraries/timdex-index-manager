@@ -344,8 +344,7 @@ def bulk_delete(
             result["deleted"] += 1
         else:
             logger.error(
-                "Something unexpected happened during deletion. Bulk delete response: "
-                "%s",
+                "Something unexpected happened during deletion. Bulk delete response: %s",
                 json.dumps(response),
             )
             result["errors"] += 1
@@ -456,8 +455,12 @@ def bulk_update(
                 )
                 result["errors"] += 1
             else:
+                message = "update"
                 raise BulkOperationError(
-                    "update", record, index, json.dumps(error)  # noqa: EM101
+                    message,
+                    record,
+                    index,
+                    json.dumps(error),
                 )
         elif response[1]["update"].get("result") == "updated":
             result["updated"] += 1

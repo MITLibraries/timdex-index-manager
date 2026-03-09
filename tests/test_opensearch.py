@@ -272,8 +272,7 @@ def test_delete_index_not_present_raises_error(test_opensearch_client):
 def test_get_or_create_index_from_source_index_exists(test_opensearch_client):
     aliases = tim_os.get_aliases(test_opensearch_client)
     assert (
-        "test-2022-09-01t00-00-00"
-        in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
+        "test-2022-09-01t00-00-00" in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
     )
     assert tim_os.get_or_create_index_from_source(
         test_opensearch_client, "test", new=False
@@ -298,8 +297,7 @@ def test_get_or_create_index_from_source_no_primary_source_index_present(
 def test_get_or_create_index_from_source_new_passed(test_opensearch_client):
     aliases = tim_os.get_aliases(test_opensearch_client)
     assert (
-        "test-2022-09-01t00-00-00"
-        in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
+        "test-2022-09-01t00-00-00" in aliases[PRIMARY_ALIAS]  # pylint: disable=unsubscriptable-object
     )
     assert tim_os.get_or_create_index_from_source(
         test_opensearch_client, "test", new=True
