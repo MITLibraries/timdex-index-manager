@@ -10,7 +10,7 @@ TIMDEX! Index Manager (TIM) is a Python CLI application for managing TIMDEX indi
 - To run unit tests: `make test`
 - To lint the repo: `make lint`
 - To run local OpenSearch with Docker: `make local-opensearch`
-- To run the app: `pipenv run tim --help`
+- To run the app: `uv run tim --help`
 
 **Important note:** The sections that follow provide instructions for running OpenSearch **locally with Docker**. These instructions are useful for testing. Please make sure the environment variable `TIMDEX_OPENSEARCH_ENDPOINT` is **not** set before proceeding.
 
@@ -24,7 +24,7 @@ docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" \
 opensearchproject/opensearch:2
 ```
 
-2. To confirm the instance is up, run `pipenv run tim -u localhost ping` or visit http://localhost:9200/. This should produce a log that looks like the following:
+2. To confirm the instance is up, run `uv run tim -u localhost ping` or visit http://localhost:9200/. This should produce a log that looks like the following:
  
 ```text
 2024-02-08 13:22:16,826 INFO tim.cli.main(): OpenSearch client configured for endpoint 'localhost'
@@ -59,7 +59,7 @@ docker pull opensearchproject/opensearch-dashboards:2
 docker compose up
 ```
 
-2. To confirm the instance is up, run `pipenv run tim ping` or visit http://localhost:9200/.
+2. To confirm the instance is up, run `uv run tim ping` or visit http://localhost:9200/.
 
 3. Access OpenSearch Dashboards through <http://localhost:5601>.
 
@@ -79,7 +79,7 @@ For both, first follow the instructions in either [Running Opensearch locally wi
 1. Utilize the CLI command `reindex-source`:
 
 ```shell
-pipenv run tim --verbose reindex-source \
+uv run tim --verbose reindex-source \
 --source <source-name> \
 <dataset-location>
 ```
@@ -89,19 +89,19 @@ pipenv run tim --verbose reindex-source \
 1.  Create a new index. Copy the name of the created index printed to the terminal's output.
 
 ```shell
-pipenv run tim create -s <source-name>
+uv run tim create -s <source-name>
 ```
 
 2. Copy the index name and promote the index to the alias.
 
 ```shell
-pipenv run tim promote -a <source-name> -i <index-name>
+uv run tim promote -a <source-name> -i <index-name>
 ```
 
 3. Bulk index records from a TIMDEX dataset (can be local or from S3).
 
 ```shell
-pipenv run tim bulk-index \
+uv run tim bulk-index \
 --source <source-name> \
 --run-id <run-id> \
 --run-date <YYYY-MM-DD-run-date> \
@@ -111,7 +111,7 @@ pipenv run tim bulk-index \
 4. After verifying that the bulk-index was successful, clean up your local OpenSearch instance by deleting the index.
 
 ```shell
-pipenv run tim delete -i <index-name>
+uv run tim delete -i <index-name>
 ```
 
 ### Running OpenSearch on AWS
@@ -120,7 +120,7 @@ pipenv run tim delete -i <index-name>
 
 2. Set the `TIMDEX_OPENSEARCH_ENDPOINT` variable in your .env to match the Dev1 (or desired) TIMDEX OpenSearch endpoint (note: do not include the http scheme prefix).
 
-3. Run `pipenv run tim ping` to confirm the client is connected to the expected TIMDEX OpenSearch instance.
+3. Run `uv run tim ping` to confirm the client is connected to the expected TIMDEX OpenSearch instance.
 
 
 ## Environment Variables 
@@ -146,7 +146,7 @@ SENTRY_DSN=### If set to a valid Sentry DSN, enables Sentry exception monitoring
 
 ## CLI commands
 
-All CLI commands can be run with `pipenv run`. 
+All CLI commands can be run with `uv run`. 
 
 ```
  Usage: tim [OPTIONS] COMMAND [ARGS]...                                                                                  

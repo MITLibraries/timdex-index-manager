@@ -29,7 +29,7 @@ def format_embeddings(embeddings: Iterator[dict]) -> Iterator[dict]:
     for embedding in embeddings:
         yield {
             "timdex_record_id": embedding["timdex_record_id"],
-            f"embedding_{embedding["embedding_strategy"]}": json.loads(
+            f"embedding_{embedding['embedding_strategy']}": json.loads(
                 embedding["embedding_object"]
             ),
         }
@@ -49,7 +49,7 @@ def generate_bulk_actions(
     index: str,
     records: Iterator[dict],
     action: str,
-) -> Generator[dict, None, None]:
+) -> Generator[dict]:
     """Iterate through records, create and yield an OpenSearch bulk action for each.
 
     The provided action must be one of the four OpenSearch bulk operation types.
@@ -106,7 +106,9 @@ def validate_bulk_cli_options(
 
 
 def validate_index_name(
-    ctx: click.Context, parameter_name: str, value: str  # noqa: ARG001
+    ctx: click.Context,  # noqa: ARG001
+    parameter_name: str,  # noqa: ARG001
+    value: str,
 ) -> str:
     """Click callback to validate a provided index name against our business rules."""
     if value is None:

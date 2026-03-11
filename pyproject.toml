@@ -1,5 +1,31 @@
-[tool.black]
-line-length = 90
+[project]
+name = "timdex-index-manager"
+version = "2.0.0"
+requires-python = ">=3.13"
+dependencies = [
+    "boto3",
+    "click",
+    "ijson",
+    "opensearch-py<3.0",
+    "rich-click",
+    "sentry-sdk",
+    "smart-open[s3]",
+    "timdex-dataset-api @ git+https://github.com/MITLibraries/timdex-dataset-api.git",
+]
+
+[dependency-groups]
+dev = [
+    "boto3-stubs",
+    "coveralls",
+    "freezegun",
+    "ipython",
+    "mypy",
+    "pip-audit",
+    "pre-commit",
+    "pytest",
+    "ruff",
+    "vcrpy",
+]
 
 [tool.mypy]
 disallow_untyped_calls = true
@@ -14,11 +40,8 @@ ignore_missing_imports = true
 log_level = "INFO"
 
 [tool.ruff]
-target-version = "py312"
-
-# set max line length
+target-version = "py313"
 line-length = 90
-
 # enumerate all fixed violations
 show-fixes = true
 
@@ -27,21 +50,21 @@ select = ["ALL", "PT"]
 
 ignore = [
     # default
-    "COM812", 
-    "D107", 
-    "N812", 
-    "PTH", 
+    "COM812",
+    "D107",
+    "N812",
+    "PTH",
 
     # project-specific
     "C90",
     "D100",
-    "D101", 
+    "D101",
     "D102",
     "D103",
-    "D104", 
+    "D104",
     "G004",
     "PLR0912",
-    "PLR0913", 
+    "PLR0913",
     "PLR0915",
     "S321",
 ]
@@ -67,3 +90,16 @@ max-doc-length = 90
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[project.scripts]
+tim = "tim.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tim*"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true

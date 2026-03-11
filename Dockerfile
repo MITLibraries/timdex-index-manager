@@ -1,12 +1,23 @@
-FROM python:3.12-slim AS build
+FROM python:3.13-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+ENV UV_SYSTEM_PYTHON=1
+
 WORKDIR /app
-COPY . .
 
-RUN pip install --no-cache-dir --upgrade pip pipenv
+# Copy project metadata
+COPY pyproject.toml uv.lock* ./
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git
+# Copy source
+COPY tim ./tim
 
-COPY Pipfile* /
-RUN pipenv install
+# Install package into system python, includes entry point script
+RUN uv pip install --system .
 
-ENTRYPOINT ["pipenv", "run", "tim"]
+ENTRYPOINT ["tim"]
+CMD []
