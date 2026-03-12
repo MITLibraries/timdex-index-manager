@@ -5,7 +5,7 @@ import os
 import sentry_sdk
 
 OPENSEARCH_BULK_CONFIG_DEFAULTS = {
-    "OPENSEARCH_BULK_MAX_CHUNK_BYTES": 100 * 1024 * 1024,
+    "OPENSEARCH_BULK_MAX_CHUNK_BYTES": 20 * 1024 * 1024,
     "OPENSEARCH_BULK_MAX_RETRIES": 50,
     "OPENSEARCH_REQUEST_TIMEOUT": 120,
 }
@@ -41,7 +41,7 @@ def configure_logger(
     """Configure application via passed application root logger.
 
     If verbose=True, 3rd party libraries can be quite chatty.  For convenience, they can
-    be set to WARNING level by either passing a comma seperated list of logger names to
+    be set to WARNING level by either passing a comma separated list of logger names to
     'warning_only_loggers' or by setting the env var WARNING_ONLY_LOGGERS.
     """
     if verbose:
@@ -50,6 +50,14 @@ def configure_logger(
             "%(asctime)s %(levelname)s %(name)s.%(funcName)s() "
             "line %(lineno)d: %(message)s"
         )
+
+        # Explicitly filter out opensearchpy's DEBUG logging of all API request payloads.
+        # This private method logs both the request + response payloads.  If we need to
+        # know, we can both log data sent (request) or received (response).
+        logging.getLogger("opensearch").addFilter(
+            lambda record: record.funcName != "_log_request_response"
+        )
+
     else:
         root_logger.setLevel(logging.INFO)
         logging_format = "%(asctime)s %(levelname)s %(name)s.%(funcName)s(): %(message)s"
