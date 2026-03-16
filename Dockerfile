@@ -13,8 +13,9 @@ WORKDIR /app
 # Copy project metadata
 COPY pyproject.toml uv.lock* ./
 
-# Copy source
+# Copy source and config
 COPY tim ./tim
+COPY config ./config
 
 # Install package into system python, includes entry point script
 RUN uv pip install --system .
