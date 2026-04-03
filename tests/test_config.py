@@ -1,4 +1,5 @@
 import logging
+from unittest import mock
 
 from tim.config import (
     OPENSEARCH_BULK_CONFIG_DEFAULTS,
@@ -31,10 +32,12 @@ def test_configure_logger_verbose():
 
 
 def test_configure_opensearch_bulk_settings_from_env(monkeypatch):
+    monkeypatch.setenv("OPENSEARCH_BULK_CHUNK_SIZE", "999")
     monkeypatch.setenv("OPENSEARCH_BULK_MAX_CHUNK_BYTES", "10")
     monkeypatch.setenv("OPENSEARCH_BULK_MAX_RETRIES", "2")
     monkeypatch.setenv("OPENSEARCH_REQUEST_TIMEOUT", "20")
     assert configure_opensearch_bulk_settings() == {
+        "OPENSEARCH_BULK_CHUNK_SIZE": 999,
         "OPENSEARCH_BULK_MAX_CHUNK_BYTES": 10,
         "OPENSEARCH_BULK_MAX_RETRIES": 2,
         "OPENSEARCH_REQUEST_TIMEOUT": 20,
@@ -60,7 +63,12 @@ def test_configure_sentry_env_variable_is_none(monkeypatch):
     assert result == "No Sentry DSN found, exceptions will not be sent to Sentry"
 
 
-def test_configure_sentry_env_variable_is_dsn(monkeypatch):
+@mock.patch("tim.config.sentry_sdk.init")
+def test_configure_sentry_env_variable_is_dsn(mock_sentry_init, monkeypatch):
     monkeypatch.setenv("SENTRY_DSN", "https://1234567890@00000.ingest.sentry.io/123456")
     result = configure_sentry()
+    mock_sentry_init.assert_called_once_with(
+        "https://1234567890@00000.ingest.sentry.io/123456",
+        environment="test",
+    )
     assert result == "Sentry DSN found, exceptions will be sent to Sentry with env=test"
