@@ -47,7 +47,11 @@ def configure_opensearch_client(url: str) -> OpenSearch:
 
     credentials = boto3.Session().get_credentials()
     region = os.getenv("AWS_REGION", "us-east-1")
-    auth = AWSV4SignerAuth(credentials, region)
+    auth = AWSV4SignerAuth(
+        credentials,
+        region,
+        service=os.getenv("AUTH_SERVICE_TYPE", "es"),
+    )
     return OpenSearch(
         hosts=[{"host": url, "port": "443"}],
         http_auth=auth,
@@ -123,8 +127,6 @@ def get_formatted_indexes(client: OpenSearch) -> str:
                 f"  Primary store size: {info['pri.store.size']}\n"
                 f"  Total store size: {info['store.size']}\n"
                 f"  UUID: {info['uuid']}\n"
-                f"  Primary Shards: {int(info['pri']):,}\n"
-                f"  Replica Shards: {int(info['rep']):,}\n"
             )
         return output
     return output + " No indexes present in OpenSearch cluster."
@@ -328,6 +330,9 @@ def bulk_delete(
     responses = streaming_bulk(
         client,
         actions,
+        chunk_size=REQUEST_CONFIG["OPENSEARCH_BULK_CHUNK_SIZE"],
+        max_retries=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_RETRIES"],
+        initial_backoff=3,
         max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
         raise_on_error=False,
     )
@@ -351,11 +356,6 @@ def bulk_delete(
         result["total"] += 1
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records deleted so far!", result["total"])
-    logger.info("Refreshing index.")
-    response = client.indices.refresh(
-        index=index,
-    )
-    logger.debug(response)
     return result
 
 
@@ -382,6 +382,8 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
     responses = streaming_bulk(
         client,
         actions,
+        chunk_size=REQUEST_CONFIG["OPENSEARCH_BULK_CHUNK_SIZE"],
+        max_retries=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_RETRIES"],
         max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
         raise_on_error=False,
     )
@@ -411,11 +413,6 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
         result["total"] += 1
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records indexed so far!", result["total"])
-    logger.info("Refreshing index.")
-    response = client.indices.refresh(
-        index=index,
-    )
-    logger.debug(response)
     return result
 
 
@@ -437,6 +434,8 @@ def bulk_update(
     responses = streaming_bulk(
         client,
         actions,
+        chunk_size=REQUEST_CONFIG["OPENSEARCH_BULK_CHUNK_SIZE"],
+        max_retries=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_RETRIES"],
         max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
         raise_on_error=False,
     )
@@ -475,9 +474,4 @@ def bulk_update(
         result["total"] += 1
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records updated so far!", result["total"])
-    logger.info("Refreshing index.")
-    response = client.indices.refresh(
-        index=index,
-    )
-    logger.debug(response)
     return result
