@@ -47,10 +47,20 @@ def configure_opensearch_client(url: str) -> OpenSearch:
 
     credentials = boto3.Session().get_credentials()
     region = os.getenv("AWS_REGION", "us-east-1")
+
+    auth_service_type = os.getenv("AUTH_SERVICE_TYPE", "es")
+    valid_auth_service_types = {"aoss", "es"}
+
+    if auth_service_type not in valid_auth_service_types:
+        raise ValueError(
+            f"AUTH_SERVICE_TYPE must be one of {sorted(valid_auth_service_types)}, "
+            f"got {auth_service_type!r}"
+        )
+
     auth = AWSV4SignerAuth(
         credentials,
         region,
-        service=os.getenv("AUTH_SERVICE_TYPE", "es"),
+        service=auth_service_type,
     )
     return OpenSearch(
         hosts=[{"host": url, "port": "443"}],
