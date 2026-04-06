@@ -37,6 +37,21 @@ def test_configure_opensearch_client_for_aws(mocked_boto3_session):
     )
 
 
+@mock.patch("tim.opensearch.OpenSearch")
+@mock.patch("tim.opensearch.AWSV4SignerAuth")
+@mock.patch("tim.opensearch.boto3.Session")
+def test_configure_opensearch_client_for_aoss_sets_auth_service(
+    mocked_session, mocked_auth, mocked_opensearch, monkeypatch
+):
+    credentials = mock.Mock()
+    mocked_session.return_value.get_credentials.return_value = credentials
+    monkeypatch.setenv("AUTH_SERVICE_TYPE", "aoss")
+
+    tim_os.configure_opensearch_client("fake-dev.us-east-1.es.amazonaws.com")
+
+    mocked_auth.assert_called_once_with(credentials, "us-east-1", service="aoss")
+
+
 @my_vcr.use_cassette("ping_localhost.yaml")
 def test_get_formatted_info(test_opensearch_client):
     assert tim_os.get_formatted_info(test_opensearch_client) == (
@@ -133,8 +148,6 @@ def test_get_formatted_indexes(test_opensearch_client):
         "\n  Primary store size: 208b"
         "\n  Total store size: 208b"
         "\n  UUID: 60Gq-vaAScOKGXkG_JAw5A"
-        "\n  Primary Shards: 1"
-        "\n  Replica Shards: 1"
         "\n"
         "\nName: index-with-no-aliases"
         "\n  Aliases: None"
@@ -144,8 +157,6 @@ def test_get_formatted_indexes(test_opensearch_client):
         "\n  Primary store size: 208b"
         "\n  Total store size: 208b"
         "\n  UUID: KqVlOA5lTw-fXZA2TEqi_g"
-        "\n  Primary Shards: 1"
-        "\n  Replica Shards: 1"
         "\n"
         "\nName: index-with-one-alias"
         "\n  Aliases: alias-with-multiple-indexes"
@@ -155,8 +166,6 @@ def test_get_formatted_indexes(test_opensearch_client):
         "\n  Primary store size: 208b"
         "\n  Total store size: 208b"
         "\n  UUID: q-NKXPp3SuWiDKhPkUxP-g"
-        "\n  Primary Shards: 1"
-        "\n  Replica Shards: 1"
         "\n"
     )
 

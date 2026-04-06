@@ -1,4 +1,3 @@
-# ruff: noqa: TRY003, EM101
 import json
 import logging
 from datetime import timedelta
