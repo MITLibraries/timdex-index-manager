@@ -13,7 +13,7 @@ permissions:
 
 jobs:
 
-  deploy:
+  build-push:
     name: Stage Build and Push
     uses: mitlibraries/.github/.github/workflows/ecr-multi-arch-deploy-stage.yml@main
     secrets: inherit

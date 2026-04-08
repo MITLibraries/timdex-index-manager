@@ -13,7 +13,7 @@ permissions:
 
 jobs:
 
-  deploy:
+  build-push:
     name: Dev Build and Push
     uses: mitlibraries/.github/.github/workflows/ecr-multi-arch-deploy-dev.yml@main
     secrets: inherit

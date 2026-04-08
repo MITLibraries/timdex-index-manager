@@ -10,7 +10,7 @@ permissions:
 
 jobs:
 
-  deploy:
+  promote:
     name: Prod promote
     uses: mitlibraries/.github/.github/workflows/ecr-multi-arch-promote-prod.yml@main
     secrets: inherit
