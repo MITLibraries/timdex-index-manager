@@ -18,6 +18,6 @@ jobs:
     uses: mitlibraries/.github/.github/workflows/ecr-multi-arch-deploy-stage.yml@main
     secrets: inherit
     with:
-      AWS_REGION: "us-east-1"
-      GHA_ROLE: "timdex-index-manager-gha-stage"
-      ECR: "timdex-index-manager-stage"
+      AWS_REGION: us-east-1
+      GHA_ROLE: timdex-index-manager-gha-stage
+      ECR: timdex-index-manager-stage

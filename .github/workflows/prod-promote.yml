@@ -15,8 +15,8 @@ jobs:
     uses: mitlibraries/.github/.github/workflows/ecr-multi-arch-promote-prod.yml@main
     secrets: inherit
     with:
-      AWS_REGION: "us-east-1"
+      AWS_REGION: us-east-1
       GHA_ROLE_STAGE: timdex-index-manager-gha-stage
       GHA_ROLE_PROD: timdex-index-manager-gha-prod
-      ECR_STAGE: "timdex-index-manager-stage"
-      ECR_PROD: "timdex-index-manager-prod"
+      ECR_STAGE: timdex-index-manager-stage
+      ECR_PROD: timdex-index-manager-prod
