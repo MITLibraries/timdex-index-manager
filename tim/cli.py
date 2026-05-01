@@ -301,7 +301,7 @@ def bulk_update(
     td = TIMDEXDataset(location=dataset_path)
 
     # bulk index records
-    records_to_index = td.read_transformed_records_iter(
+    records_to_index = td.records.read_transformed_records_iter(
         run_date=run_date,
         run_id=run_id,
         action="index",
@@ -312,7 +312,7 @@ def bulk_update(
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk delete records
-    records_to_delete = td.read_dicts_iter(
+    records_to_delete = td.records.read_dicts_iter(
         columns=["timdex_record_id"],
         run_date=run_date,
         run_id=run_id,
@@ -483,7 +483,7 @@ def reindex_source(
     # bulk index records
     logger.info("Reindexing records.")
     index_results = {"created": 0, "updated": 0, "errors": 0, "total": 0}
-    records_to_index = td.read_transformed_records_iter(
+    records_to_index = td.records.read_transformed_records_iter(
         table="current_records",
         source=source,
         action="index",
