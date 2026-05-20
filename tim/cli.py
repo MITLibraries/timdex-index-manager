@@ -25,7 +25,12 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Bulk record processing commands",
-            "commands": ["bulk-update", "bulk-update-embeddings", "reindex-source"],
+            "commands": [
+                "bulk-update",
+                "bulk-update-embeddings",
+                "bulk-update-fulltexts",
+                "reindex-source",
+            ],
         },
     ]
 }
@@ -366,7 +371,7 @@ def bulk_update_embeddings(
 
     The method will read vector embeddings from a TIMDEXDataset
     located at dataset_path using the 'timdex-dataset-api' library. The dataset
-    is filtered by run date and run ID.
+    is filtered by run ID.
     """
     client = ctx.obj["CLIENT"]
     index = helpers.validate_bulk_cli_options(index, source, client)
@@ -411,6 +416,93 @@ def bulk_update_embeddings(
 
     except BulkOperationError as exception:
         logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
+        ctx.exit(1)
+
+
+@main.command()
+@click.option(
+    "-i",
+    "--index",
+    help="Name of the index where the bulk update to add embeddings is performed.",
+)
+@click.option(
+    "-s",
+    "--source",
+    type=click.Choice(VALID_SOURCES),
+    help=(
+        "Source whose primary-aliased index will receive the bulk updated records with "
+        "embeddings.  If --run-id is not passed, all current embeddings for this source "
+        "will be used."
+    ),
+)
+@click.option(
+    "-rid",
+    "--run-id",
+    help="Limit to embeddings for a specific TIMDEX ETL run.",
+)
+@click.argument("dataset_path", type=click.Path())
+@click.pass_context
+def bulk_update_fulltexts(
+    ctx: click.Context,
+    index: str,
+    source: str,
+    run_id: str,
+    dataset_path: str,
+) -> None:
+    """Bulk update existing records with fulltexts for an index.
+
+    Must provide either the name of an existing index in the cluster or a valid source.
+    If source is provided, it will update existing records for the primary-aliased
+    index for the source. If the provided index doesn't exist in the cluster, the
+    method will log an error and abort.
+
+    The method will read fulltexts from a TIMDEXDataset located at dataset_path using
+    the 'timdex-dataset-api' library. The dataset is filtered by run ID.
+    """
+    client = ctx.obj["CLIENT"]
+    index = helpers.validate_bulk_cli_options(index, source, client)
+
+    logger.info(
+        f"Bulk updating records with fulltexts from dataset '{dataset_path}' "
+        f"into '{index}'"
+    )
+
+    td = TIMDEXDataset(location=dataset_path)
+
+    # read fulltexts for a specific run
+    if run_id:
+        read_kwargs = {
+            "table": "current_run_fulltexts",
+            "columns": [
+                "timdex_record_id",
+                "fulltext",
+            ],
+            "run_id": run_id,
+            "action": "index",
+        }
+
+    # default: read current fulltexts for a source
+    else:
+        read_kwargs = {
+            "table": "current_fulltexts",
+            "source": source,
+            "columns": [
+                "timdex_record_id",
+                "fulltext",
+            ],
+            "action": "index",
+        }
+
+    fulltexts = td.fulltexts.read_dicts_iter(**read_kwargs)
+
+    fulltexts_to_index = helpers.format_fulltexts(fulltexts)
+
+    try:
+        update_results = tim_os.bulk_update(client, index, fulltexts_to_index)
+        logger.info(f"Bulk update with fulltexts complete: {json.dumps(update_results)}")
+
+    except BulkOperationError as exception:
+        logger.error(f"Bulk update with fulltexts failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
 
 
