@@ -136,7 +136,7 @@ WORKSPACE=### Set to `dev` for local development, this will be set to `stage` an
 ```shell
 AWS_REGION=### Only needed if AWS region changes from the default of us-east-1.
 OPENSEARCH_BULK_CHUNK_SIZE=### Chunk size limit for sending requests to the bulk indexing endpoint, in documents. Defaults to 1,000.
-OPENSEARCH_BULK_MAX_CHUNK_BYTES=### Chunk size limit for sending requests to the bulk indexing endpoint, in bytes. Defaults to 20mb (20 * 1024 * 1024).
+OPENSEARCH_BULK_MAX_CHUNK_BYTES=### Chunk size limit for sending requests to the bulk indexing endpoint, in bytes. Defaults to 8mb.
 OPENSEARCH_BULK_MAX_RETRIES=### Maximum number of retries when sending requests to the bulk indexing endpoint. Defaults to 25.
 OPENSEARCH_INITIAL_ADMIN_PASSWORD=###If using a local Docker OpenSearch instance, this must be set (for versions >= 2.12.0).
 OPENSEARCH_REQUEST_TIMEOUT=### Only used for OpenSearch requests that tend to take longer than the default timeout of 10 seconds, such as bulk or index refresh requests. Defaults to 120 seconds if not set.
