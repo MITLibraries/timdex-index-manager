@@ -10,7 +10,7 @@ dependencies = [
     "rich-click",
     "sentry-sdk",
     "smart-open[s3]",
-    "timdex-dataset-api @ git+https://github.com/MITLibraries/timdex-dataset-api.git",
+    "timdex-dataset-api",
 ]
 
 [dependency-groups]
@@ -103,3 +103,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.uv]
 package = true
+
+[tool.uv.sources]
+timdex-dataset-api = { git = "https://github.com/MITLibraries/timdex-dataset-api"}
