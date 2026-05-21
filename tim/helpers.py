@@ -35,6 +35,15 @@ def format_embeddings(embeddings: Iterator[dict]) -> Iterator[dict]:
         }
 
 
+def format_fulltexts(fulltexts: Iterator[dict]) -> Iterator[dict]:
+    """Format fulltexts for bulk update command."""
+    for fulltext in fulltexts:
+        yield {
+            "timdex_record_id": fulltext["timdex_record_id"],
+            "fulltext": fulltext["fulltext"].decode(),
+        }
+
+
 def generate_index_name(source: str) -> str:
     """Generate a new index name from a source short name.
 
