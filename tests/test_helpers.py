@@ -1,10 +1,76 @@
+from unittest.mock import Mock, patch
+
 import pytest
-from click.exceptions import BadParameter, UsageError
+from click.exceptions import BadParameter
 from freezegun import freeze_time
+from opensearchpy.exceptions import TransportError
 
 from tim import helpers
+from tim.errors import SingleOperationError
 
-from .conftest import my_vcr
+
+@freeze_time("2026-07-09 10:00:00", auto_tick_seconds=10)
+@patch("tim.helpers.time.sleep")
+def test_retry_decorator_with_sleep_success(mock_sleep):
+    """Retry resulting in retryable error returns success within allowed time."""
+    # init TransportError with 507 status
+    retryable_error = TransportError(507, "Insufficient Storage")
+
+    # mock method that yields TransportError to force retry
+    # then yields success after retry
+    hello_world = Mock()
+    hello_world.__name__ = "hello_world"
+    hello_world.side_effect = [retryable_error, "Hello"]
+
+    wrapped_hello_world = helpers.retry()(hello_world)
+
+    assert wrapped_hello_world() == "Hello"
+    assert hello_world.call_count == 2  # noqa: PLR2004
+
+
+@patch("tim.helpers.time.sleep")
+def test_retry_decorator_with_sleep_raises_timeout_error(mock_sleep):
+    """Retry resulting in retryable error raises error if timeout reached."""
+    # init TransportError with 507 status
+    retryable_error = TransportError(507, "Insufficient Storage")
+
+    # mock method that yields TransportError to force retry
+    # then yields success after retry
+    hello_world = Mock()
+    hello_world.__name__ = "hello_world"
+    hello_world.side_effect = retryable_error
+
+    wrapped_hello_world = helpers.retry(max_attempts=2)(hello_world)
+
+    with pytest.raises(TimeoutError):
+        wrapped_hello_world()
+    assert hello_world.call_count == 2  # noqa: PLR2004
+
+
+@patch("tim.helpers.time.sleep")
+def test_retry_decorator_without_sleep(mock_sleep):
+    """Retry resulting in success returns immediately."""
+
+    @helpers.retry()
+    def hello_world():
+        return "Hello"
+
+    result = hello_world()
+
+    assert result == "Hello"
+    assert mock_sleep.call_count == 0
+
+
+@patch("tim.helpers.time.sleep")
+def test_retry_decorator_raises_single_operation_error(mock_sleep):
+    """Retry resulting in unexpected error raises error."""
+
+    @helpers.retry()
+    def hello_world():
+        raise Exception("Unexpected error")  # noqa: TRY002
+
+    with pytest.raises(SingleOperationError):
+        hello_world()
 
 
 def test_confirm_action_yes(monkeypatch):
@@ -75,45 +141,6 @@ def test_get_source_from_index():
 
 def test_get_source_from_index_without_dash():
     assert helpers.get_source_from_index("testsource") == "testsource"
-
-
-def test_validate_bulk_cli_options_neither_index_nor_source_passed(
-    test_opensearch_client,
-):
-    with pytest.raises(
-        UsageError, match=r"Must provide either an existing index name or a valid source."
-    ):
-        helpers.validate_bulk_cli_options(None, None, test_opensearch_client)
-
-
-def test_validate_bulk_cli_options_index_and_source_passed(test_opensearch_client):
-    with pytest.raises(
-        UsageError,
-        match=r"Only one of --index and --source options is allowed, not both.",
-    ):
-        helpers.validate_bulk_cli_options(
-            "index-name", "source-name", test_opensearch_client
-        )
-
-
-@my_vcr.use_cassette("helpers/bulk_cli_nonexistent_index.yaml")
-def test_validate_bulk_cli_options_nonexistent_index_passed(test_opensearch_client):
-    with pytest.raises(
-        BadParameter, match=r"Index 'wrong' does not exist in the cluster."
-    ):
-        helpers.validate_bulk_cli_options("wrong", None, test_opensearch_client)
-
-
-@my_vcr.use_cassette("helpers/bulk_cli_no_primary_index_for_source.yaml")
-def test_validate_bulk_cli_options_no_primary_index_for_source(test_opensearch_client):
-    with pytest.raises(
-        BadParameter,
-        match=(
-            r"No index name was passed and there is no "
-            r"primary-aliased index for source 'dspace'."
-        ),
-    ):
-        helpers.validate_bulk_cli_options(None, "dspace", test_opensearch_client)
 
 
 def test_validate_index_name_no_value():

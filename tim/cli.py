@@ -9,7 +9,7 @@ from timdex_dataset_api import TIMDEXDataset
 from tim import errors, helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
-from tim.errors import BulkIndexingError, BulkOperationError
+from tim.errors import BulkIndexingError, BulkOperationError, SingleOperationError
 
 logger = logging.getLogger(__name__)
 
@@ -296,7 +296,7 @@ def bulk_update(
     Logs an error and aborts if the provided index doesn't exist in the cluster.
     """
     client = ctx.obj["CLIENT"]
-    index = helpers.validate_bulk_cli_options(index, source, client)
+    index = validate_bulk_cli_options(client, index, source)
 
     logger.info(f"Bulk updating records from dataset '{dataset_path}' into '{index}'")
 
@@ -313,7 +313,7 @@ def bulk_update(
     )
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
-    except BulkIndexingError as exception:
+    except (BulkIndexingError, SingleOperationError, TimeoutError) as exception:
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk delete records
@@ -374,7 +374,7 @@ def bulk_update_embeddings(
     is filtered by run ID.
     """
     client = ctx.obj["CLIENT"]
-    index = helpers.validate_bulk_cli_options(index, source, client)
+    index = validate_bulk_cli_options(client, index, source)
 
     logger.info(
         f"Bulk updating records with embeddings from dataset '{dataset_path}' "
@@ -413,8 +413,7 @@ def bulk_update_embeddings(
     try:
         update_results = tim_os.bulk_update(client, index, embeddings_to_index)
         logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
-
-    except BulkOperationError as exception:
+    except (BulkOperationError, SingleOperationError, TimeoutError) as exception:
         logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
 
@@ -460,7 +459,7 @@ def bulk_update_fulltexts(
     the 'timdex-dataset-api' library. The dataset is filtered by run ID.
     """
     client = ctx.obj["CLIENT"]
-    index = helpers.validate_bulk_cli_options(index, source, client)
+    index = validate_bulk_cli_options(client, index, source)
 
     logger.info(
         f"Bulk updating records with fulltexts from dataset '{dataset_path}' "
@@ -500,8 +499,7 @@ def bulk_update_fulltexts(
     try:
         update_results = tim_os.bulk_update(client, index, fulltexts_to_index)
         logger.info(f"Bulk update with fulltexts complete: {json.dumps(update_results)}")
-
-    except BulkOperationError as exception:
+    except (BulkOperationError, SingleOperationError, TimeoutError) as exception:
         logger.error(f"Bulk update with fulltexts failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
 
@@ -582,7 +580,7 @@ def reindex_source(
     )
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
-    except BulkIndexingError as exception:
+    except (BulkIndexingError, SingleOperationError, TimeoutError) as exception:
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk index embeddings
@@ -604,10 +602,36 @@ def reindex_source(
         embeddings_to_index = helpers.format_embeddings(embeddings)
         try:
             update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
-        except BulkOperationError as exception:
+        except (BulkOperationError, SingleOperationError, TimeoutError) as exception:
             logger.error(  # noqa: TRY400
                 f"Bulk update with embeddings failed: {exception}"
             )
 
     summary_results = {"index": index_results, "update": update_results}
     logger.info(f"Reindex source complete: {json.dumps(summary_results)}")
+
+
+def validate_bulk_cli_options(
+    client: tim_os.OpenSearch,
+    index: str | None,
+    source: str,
+) -> str:
+    options = [index, source]
+    if all(options):
+        message = "Only one of --index and --source options is allowed, not both."
+        raise click.UsageError(message)
+    if not any(options):
+        message = "Must provide either an existing index name or a valid source."
+        raise click.UsageError(message)
+    if index and not client.indices.exists(index):
+        message = f"Index '{index}' does not exist in the cluster."
+        raise click.BadParameter(message)
+    if source:
+        index = tim_os.get_primary_index_for_source(client, source)
+    if not index:
+        message = (
+            "No index name was passed and there is no primary-aliased index for "
+            f"source '{source}'."
+        )
+        raise click.BadParameter(message)
+    return index

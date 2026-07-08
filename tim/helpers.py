@@ -1,11 +1,67 @@
+import functools
 import json
-from collections.abc import Generator, Iterator
+import logging
+import time
+from collections import defaultdict
+from collections.abc import Callable, Generator, Iterator
 from datetime import UTC, datetime
 
 import click
+from opensearchpy.exceptions import TransportError
 
-from tim import opensearch as tim_os
 from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
+from tim.errors import SingleOperationError
+
+logger = logging.getLogger(__name__)
+TRANSPORT_ERROR_507 = 507
+
+
+def retry(
+    delay: float = 5,
+    max_attempts: int = 8,
+) -> Callable:
+    """Retry the decorated function until success or max attempts reached.
+
+    Args:
+        delay: Time to wait, in seconds, between retry attempts. This value is
+        multiplied by the attempt number, resulting in a progressive backoff.
+        max_attempts: Number of allowed retries.
+    """
+
+    def retry_decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> Callable:  # type: ignore[no-untyped-def] # noqa: ANN002, ANN003
+            attempt = 0
+
+            while attempt < max_attempts:
+                attempt += 1
+                logger.info(f"Calling {func.__name__}, attempt {attempt}")
+
+                try:
+                    return func(*args, **kwargs)
+                except Exception as exception:
+                    if (
+                        isinstance(exception, TransportError)
+                        and exception.status_code == TRANSPORT_ERROR_507
+                    ):
+                        logger.warning(
+                            f"{func.__name__} raised retryable exception, attempt {attempt}: "  # noqa: E501
+                            f"{exception}"
+                        )
+                    else:
+                        logger.exception(
+                            f"{func.__name__} raised unexpected exception, attempt {attempt}"  # noqa: E501
+                        )
+                        raise SingleOperationError from exception
+
+                logger.debug(f"Sleeping {delay} seconds before retrying {func.__name__}")
+                time.sleep(delay * attempt)
+
+            raise TimeoutError(f"Timed out after {attempt} attempts")
+
+        return wrapper
+
+    return retry_decorator
 
 
 def confirm_action(input_prompt: str) -> bool:
@@ -55,9 +111,7 @@ def generate_index_name(source: str) -> str:
 
 
 def generate_bulk_actions(
-    index: str,
-    records: Iterator[dict],
-    action: str,
+    index: str, records: Iterator[dict], action: str, cache: defaultdict | None = None
 ) -> Generator[dict]:
     """Iterate through records, create and yield an OpenSearch bulk action for each.
 
@@ -83,6 +137,9 @@ def generate_bulk_actions(
             case _ if action != "delete":
                 doc["_source"] = record
 
+        if cache is not None:
+            cache[record["timdex_record_id"]].append(doc)
+
         yield doc
 
 
@@ -90,28 +147,13 @@ def get_source_from_index(index_name: str) -> str:
     return index_name.split("-", maxsplit=1)[0]
 
 
-def validate_bulk_cli_options(
-    index: str | None, source: str, client: tim_os.OpenSearch
-) -> str:
-    options = [index, source]
-    if all(options):
-        message = "Only one of --index and --source options is allowed, not both."
-        raise click.UsageError(message)
-    if not any(options):
-        message = "Must provide either an existing index name or a valid source."
-        raise click.UsageError(message)
-    if index and not client.indices.exists(index):
-        message = f"Index '{index}' does not exist in the cluster."
-        raise click.BadParameter(message)
-    if source:
-        index = tim_os.get_primary_index_for_source(client, source)
-    if not index:
-        message = (
-            "No index name was passed and there is no primary-aliased index for "
-            f"source '{source}'."
-        )
-        raise click.BadParameter(message)
-    return index
+def pop_cache_entry(cache: defaultdict, record_id: str) -> None:
+    """Remove the oldest action for a record from the cache."""
+    actions_deque = cache.get(record_id)
+    if actions_deque:
+        actions_deque.popleft()
+        if not actions_deque:
+            del cache[record_id]
 
 
 def validate_index_name(

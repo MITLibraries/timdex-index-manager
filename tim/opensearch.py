@@ -1,7 +1,9 @@
 import json
 import logging
 import os
+from collections import defaultdict, deque
 from collections.abc import Iterator
+from typing import Any
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
@@ -25,6 +27,7 @@ from tim.errors import (
 logger = logging.getLogger(__name__)
 
 REQUEST_CONFIG = configure_opensearch_bulk_settings()
+TRANSPORT_ERROR_507 = 507
 
 # Cluster functions
 
@@ -388,7 +391,8 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
     processed.
     """
     result = {"created": 0, "updated": 0, "errors": 0, "total": 0}
-    actions = helpers.generate_bulk_actions(index, records, "index")
+    actions_cache: defaultdict = defaultdict(deque)
+    actions = helpers.generate_bulk_actions(index, records, "index", actions_cache)
     responses = streaming_bulk(
         client,
         actions,
@@ -398,18 +402,28 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
         raise_on_error=False,
     )
     for response in responses:
+        record_id = response[1]["index"]["_id"]
         if response[0] is False:
+            status = response[1]["index"]["status"]
             error = response[1]["index"]["error"]
-            record = response[1]["index"]["_id"]
             if error["type"] == "mapper_parsing_exception":
                 logger.error(
                     "Error indexing record '%s'. Details: %s",
-                    record,
+                    record_id,
                     json.dumps(error),
                 )
                 result["errors"] += 1
+            elif status == TRANSPORT_ERROR_507:
+                retry_response = execute_single_record_action(
+                    client,
+                    index,
+                    record_id=record_id,
+                    body=actions_cache[record_id][0]["_source"],
+                    operation="index",
+                )
+                result[retry_response["result"]] += 1
             else:
-                raise BulkIndexingError(record, index, json.dumps(error))
+                raise BulkIndexingError(record_id, index, json.dumps(error))
         elif response[1]["index"].get("result") == "created":
             result["created"] += 1
         elif response[1]["index"].get("result") == "updated":
@@ -421,8 +435,13 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
             )
             result["errors"] += 1
         result["total"] += 1
+
+        # remove record action from cache after processing
+        helpers.pop_cache_entry(actions_cache, record_id)
+
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records indexed so far!", result["total"])
+
     return result
 
 
@@ -440,7 +459,8 @@ def bulk_update(
     processed.
     """
     result = {"updated": 0, "skipped": 0, "errors": 0, "total": 0}
-    actions = helpers.generate_bulk_actions(index, records, "update")
+    actions_cache: defaultdict = defaultdict(deque)
+    actions = helpers.generate_bulk_actions(index, records, "update", actions_cache)
     responses = streaming_bulk(
         client,
         actions,
@@ -450,24 +470,37 @@ def bulk_update(
         raise_on_error=False,
     )
     for response in responses:
+        record_id = response[1]["update"]["_id"]
         if response[0] is False:
+            status = response[1]["update"]["status"]
             error = response[1]["update"]["error"]
-            record = response[1]["update"]["_id"]
             if error["type"] in [
                 "mapper_parsing_exception",
                 "document_missing_exception",
             ]:
                 logger.error(
                     "Error updating record '%s'. Details: %s",
-                    record,
+                    record_id,
                     json.dumps(error),
                 )
                 result["errors"] += 1
+            elif status == TRANSPORT_ERROR_507:
+                retry_response = execute_single_record_action(
+                    client,
+                    index,
+                    record_id=record_id,
+                    body=actions_cache[record_id][0]["doc"],
+                    operation="update",
+                )
+                if retry_response["result"] == "updated":
+                    result["updated"] += 1
+                elif retry_response["result"] == "noop":
+                    result["skipped"] += 1
             else:
                 message = "update"
                 raise BulkOperationError(
                     message,
-                    record,
+                    record_id,
                     index,
                     json.dumps(error),
                 )
@@ -482,6 +515,36 @@ def bulk_update(
             )
             result["errors"] += 1
         result["total"] += 1
+
+        # remove record action from cache after processing
+        helpers.pop_cache_entry(actions_cache, record_id)
+
         if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
             logger.info("Status update: %s records updated so far!", result["total"])
+
     return result
+
+
+@helpers.retry()
+def execute_single_record_action(
+    client: OpenSearch, index: str, record_id: str, body: dict, operation: str
+) -> dict[str, Any]:
+    """Execute an OpenSearch action for a single record.
+
+    Supports index, update, and delete actions for one record. The action
+    is dispatched to the corresponding OpenSearch client method based on
+    `operation`.
+    """
+    logger.info(f"Retrying '{operation}' operation for {record_id}")
+    method = getattr(client, operation)
+    if operation == "index":
+        method_args = {"index": index, "id": record_id, "body": body}
+    elif operation == "update":
+        method_args = {"index": index, "id": record_id, "body": {"doc": body}}
+    elif operation == "delete":
+        method_args = {
+            "index": index,
+            "id": record_id,
+        }
+
+    return method(**method_args)
