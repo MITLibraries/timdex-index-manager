@@ -10,7 +10,7 @@ import click
 from opensearchpy.exceptions import TransportError
 
 from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
-from tim.errors import SingleOperationError
+from tim.errors import RetryFailedWithUnexpectedError
 
 logger = logging.getLogger(__name__)
 TRANSPORT_ERROR_507 = 507
@@ -52,7 +52,7 @@ def retry(
                         logger.exception(
                             f"{func.__name__} raised unexpected exception, attempt {attempt}"  # noqa: E501
                         )
-                        raise SingleOperationError from exception
+                        raise RetryFailedWithUnexpectedError from exception
 
                 logger.debug(f"Sleeping {delay} seconds before retrying {func.__name__}")
                 time.sleep(delay * attempt)

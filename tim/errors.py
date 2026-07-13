@@ -19,7 +19,7 @@ class BulkIndexingError(Exception):
         super().__init__(self.message)
 
 
-class BulkOperationError(Exception):
+class BulkActionError(Exception):
     """Exception raised when an unexpected error is returned during a bulk operation."""
 
     def __init__(self, action: str, record: str, index: str, error: str) -> None:
@@ -35,8 +35,8 @@ class BulkOperationError(Exception):
         super().__init__(self.message)
 
 
-class SingleOperationError(Exception):
-    """Exception raised when an unexpected error occurs during a single operation."""
+class RetryFailedWithUnexpectedError(Exception):
+    """Exception raised when an unexpected error occurs during a retried operation."""
 
 
 class IndexExistsError(Exception):

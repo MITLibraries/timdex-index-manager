@@ -599,6 +599,32 @@ def test_bulk_delete_logs_error_if_record_not_found(
     )
 
 
+@pytest.mark.parametrize("mock_streaming_bulk", ["delete"], indirect=True)
+@mock.patch("tim.opensearch.execute_single_record_action")
+@mock.patch("tim.helpers.retry")
+def test_bulk_delete_retries_transport_error_507(
+    mock_retry,
+    mock_execute_single_record_action,
+    mock_streaming_bulk,
+    test_opensearch_client,
+    one_valid_index_libguides_records,
+):
+
+    mock_execute_single_record_action.return_value = {
+        "_index": "test-index",
+        "_id": "libguides:guides-175846",
+        "_version": 1,
+        "result": "deleted",
+    }
+    with mock.patch("tim.opensearch.streaming_bulk", side_effect=mock_streaming_bulk):
+        result = tim_os.bulk_delete(
+            test_opensearch_client, "test-index", one_valid_index_libguides_records
+        )
+
+    assert result["deleted"] == 1
+    assert mock_execute_single_record_action.call_count == 1
+
+
 @my_vcr.use_cassette("opensearch/bulk_update_updates_records.yaml")
 def test_bulk_update_updates_records(test_opensearch_client):
     updates = [
