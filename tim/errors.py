@@ -35,6 +35,10 @@ class BulkOperationError(Exception):
         super().__init__(self.message)
 
 
+class SingleOperationError(Exception):
+    """Exception raised when an unexpected error occurs during a single operation."""
+
+
 class IndexExistsError(Exception):
     """Exception raised when attempting to create an index that is already present."""
 

@@ -3,9 +3,10 @@ import re
 from unittest.mock import patch
 
 import pytest
+from click.exceptions import BadParameter, UsageError
 from freezegun import freeze_time
 
-from tim.cli import main
+from tim.cli import main, validate_bulk_cli_options
 from tim.errors import BulkIndexingError, BulkOperationError
 
 from .conftest import EXIT_CODES, my_vcr
@@ -187,7 +188,7 @@ def test_promote_index(caplog, runner):
 # Test bulk record processing commands
 
 
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_delete")
 @patch("tim.opensearch.bulk_index")
 def test_bulk_update_with_source_success(
@@ -229,7 +230,7 @@ def test_bulk_update_with_source_success(
     )
 
 
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_delete")
 @patch("tim.opensearch.bulk_index")
 def test_bulk_update_with_source_raise_bulk_indexing_error(
@@ -282,7 +283,7 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
         {"updated": 0, "errors": 1, "total": 1},
     ],
 )
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_update")
 def test_bulk_update_embeddings_logs_complete(
     mock_bulk_update,
@@ -315,7 +316,7 @@ def test_bulk_update_embeddings_logs_complete(
     )
 
 
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_update")
 def test_bulk_update_embeddings_exit_bulk_operation_error(
     mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
@@ -341,7 +342,7 @@ def test_bulk_update_embeddings_exit_bulk_operation_error(
     assert "Bulk update with embeddings failed" in caplog.text
 
 
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_update")
 def test_bulk_update_embeddings_source_only_logs_complete(
     mock_bulk_update,
@@ -379,7 +380,7 @@ def test_bulk_update_embeddings_source_only_logs_complete(
         {"updated": 0, "errors": 1, "total": 1},
     ],
 )
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_update")
 def test_bulk_update_fulltexts_logs_complete(
     mock_bulk_update,
@@ -412,7 +413,7 @@ def test_bulk_update_fulltexts_logs_complete(
     )
 
 
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_update")
 def test_bulk_update_fulltexts_exit_bulk_operation_error(
     mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
@@ -438,7 +439,7 @@ def test_bulk_update_fulltexts_exit_bulk_operation_error(
     assert "Bulk update with fulltexts failed" in caplog.text
 
 
-@patch("tim.helpers.validate_bulk_cli_options")
+@patch("tim.cli.validate_bulk_cli_options")
 @patch("tim.opensearch.bulk_update")
 def test_bulk_update_fulltexts_source_only_logs_complete(
     mock_bulk_update,
@@ -551,3 +552,40 @@ def test_reindex_source_skip_embeddings(
     assert result.exit_code == EXIT_CODES["success"]
     assert "Skipping embeddings update." in caplog.text
     mock_bulk_update.assert_not_called()
+
+
+def test_validate_bulk_cli_options_neither_index_nor_source_passed(
+    test_opensearch_client,
+):
+    with pytest.raises(
+        UsageError, match=r"Must provide either an existing index name or a valid source."
+    ):
+        validate_bulk_cli_options(test_opensearch_client, None, None)
+
+
+def test_validate_bulk_cli_options_index_and_source_passed(test_opensearch_client):
+    with pytest.raises(
+        UsageError,
+        match=r"Only one of --index and --source options is allowed, not both.",
+    ):
+        validate_bulk_cli_options(test_opensearch_client, "index-name", "source-name")
+
+
+@my_vcr.use_cassette("helpers/bulk_cli_nonexistent_index.yaml")
+def test_validate_bulk_cli_options_nonexistent_index_passed(test_opensearch_client):
+    with pytest.raises(
+        BadParameter, match=r"Index 'wrong' does not exist in the cluster."
+    ):
+        validate_bulk_cli_options(test_opensearch_client, "wrong", None)
+
+
+@my_vcr.use_cassette("helpers/bulk_cli_no_primary_index_for_source.yaml")
+def test_validate_bulk_cli_options_no_primary_index_for_source(test_opensearch_client):
+    with pytest.raises(
+        BadParameter,
+        match=(
+            r"No index name was passed and there is no "
+            r"primary-aliased index for source 'dspace'."
+        ),
+    ):
+        validate_bulk_cli_options(test_opensearch_client, None, "dspace")

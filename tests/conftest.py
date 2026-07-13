@@ -42,6 +42,13 @@ def timdex_dataset() -> TIMDEXDataset:
 
 
 @pytest.fixture
+def one_valid_index_libguides_records(timdex_dataset):
+    return timdex_dataset.records.read_transformed_records_iter(
+        run_id="85cfe316-089c-4639-a5af-c861a7321493", limit=1
+    )
+
+
+@pytest.fixture
 def five_valid_index_libguides_records(timdex_dataset):
     return timdex_dataset.records.read_transformed_records_iter(
         run_id="85cfe316-089c-4639-a5af-c861a7321493"

@@ -15,6 +15,38 @@ from tim.errors import (
 
 from .conftest import my_vcr
 
+
+# Fixture
+@pytest.fixture
+def mock_streaming_bulk(request):
+    action_type = request.param
+
+    def _streaming_bulk(client, actions, *args, **kwargs):
+        # exhaust generator => fills actions_cache via generate_bulk_actions()
+        actions_list = list(actions)
+
+        # return an iterable of (ok, item) like streaming_bulk(..., raise_on_error=False)
+        return iter(
+            (
+                False,
+                {
+                    action_type: {
+                        "_index": "test-index",
+                        "_id": "libguides:guides-175846",
+                        "status": 507,
+                        "error": {
+                            "type": "internal_server_exception",
+                            "reason": "Internal error occurred while processing request",
+                        },
+                    }
+                },
+            )
+            for _ in actions_list
+        )
+
+    return _streaming_bulk
+
+
 # Cluster functions
 
 
@@ -506,6 +538,32 @@ def test_bulk_index_logs_mapper_parsing_errors(
     assert "Error indexing record 'libguides:guides-175846'" in caplog.text
 
 
+@pytest.mark.parametrize("mock_streaming_bulk", ["index"], indirect=True)
+@mock.patch("tim.opensearch.execute_single_record_action")
+@mock.patch("tim.helpers.retry")
+def test_bulk_index_retries_transport_error_507(
+    mock_retry,
+    mock_execute_single_record_action,
+    mock_streaming_bulk,
+    test_opensearch_client,
+    one_valid_index_libguides_records,
+):
+    # mock successful client.index response
+    mock_execute_single_record_action.return_value = {
+        "_index": "test-index",
+        "_id": "libguides:guides-175846",
+        "_version": 1,
+        "result": "created",
+    }
+    with mock.patch("tim.opensearch.streaming_bulk", side_effect=mock_streaming_bulk):
+        result = tim_os.bulk_index(
+            test_opensearch_client, "test-index", one_valid_index_libguides_records
+        )
+
+    assert result["created"] == 1
+    assert mock_execute_single_record_action.call_count == 1
+
+
 @my_vcr.use_cassette("opensearch/bulk_delete_records.yaml")
 def test_bulk_delete_deletes_records(
     caplog, monkeypatch, test_opensearch_client, one_valid_delete_libguides_records
@@ -577,3 +635,29 @@ def test_bulk_update_records_error_record_not_found(
         """Details: {"type": "document_missing_exception", """
         """"reason": "[i-am-not-found]: document missing","""
     ) in caplog.text
+
+
+@pytest.mark.parametrize("mock_streaming_bulk", ["update"], indirect=True)
+@mock.patch("tim.opensearch.execute_single_record_action")
+@mock.patch("tim.helpers.retry")
+def test_bulk_update_retries_transport_error_507(
+    mock_retry,
+    mock_execute_single_record_action,
+    mock_streaming_bulk,
+    test_opensearch_client,
+    one_valid_index_libguides_records,
+):
+
+    mock_execute_single_record_action.return_value = {
+        "_index": "test-index",
+        "_id": "libguides:guides-175846",
+        "_version": 1,
+        "result": "updated",
+    }
+    with mock.patch("tim.opensearch.streaming_bulk", side_effect=mock_streaming_bulk):
+        result = tim_os.bulk_update(
+            test_opensearch_client, "test-index", one_valid_index_libguides_records
+        )
+
+    assert result["updated"] == 1
+    assert mock_execute_single_record_action.call_count == 1
