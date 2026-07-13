@@ -19,8 +19,9 @@ TRANSPORT_ERROR_507 = 507
 def retry(
     delay: float = 5,
     max_attempts: int = 8,
+    until_condition: Callable | None = None,
 ) -> Callable:
-    """Retry the decorated function until success or max attempts reached.
+    """Retry the decorated function until success, condition met, or max attempts met.
 
     This retry is opinionated towards uses of opensearchpy's non-bulk API methods,
     which raise exceptions when OpenSearch returns an error response. The retry
@@ -38,6 +39,9 @@ def retry(
         delay: Time to wait, in seconds, between retry attempts. This value is
         multiplied by the attempt number, resulting in a progressive backoff.
         max_attempts: Number of allowed retries.
+        until_condition: Function that evaluates the result returned by the
+        decorated function and returns True when the required condition is met;
+        otherwise, returns False.
     """
 
     def retry_decorator(func: Callable) -> Callable:
@@ -50,7 +54,22 @@ def retry(
                 logger.info(f"Calling {func.__name__}, attempt {attempt}")
 
                 try:
-                    return func(*args, **kwargs)
+                    result = func(*args, **kwargs)
+
+                    if until_condition is not None and until_condition(result):
+                        logger.info(
+                            f"{func.__name__} succeeded and met until_condition "
+                            f"on attempt {attempt}; result: {result}."
+                        )
+                        return result
+
+                    if until_condition is None:
+                        logger.info(
+                            f"{func.__name__} succeeded on attempt {attempt}; "
+                            f"result: {result}"
+                        )
+                        return result
+
                 except NotFoundError:
                     raise
                 except RequestError as exception:

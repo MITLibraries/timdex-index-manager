@@ -209,19 +209,20 @@ def test_bulk_update_with_source_success(
     mock_bulk_delete.return_value = {"deleted": 0, "errors": 0, "total": 0}
     mock_validate_bulk_cli_options.return_value = "alma"
 
-    result = runner.invoke(
-        main,
-        [
-            "bulk-update",
-            "--source",
-            "alma",
-            "--run-date",
-            "2024-12-01",
-            "--run-id",
-            "abc123",
-            "tests/fixtures/dataset",
-        ],
-    )
+    with patch("tim.cli._publish_index_doc_count_metric"):
+        result = runner.invoke(
+            main,
+            [
+                "bulk-update",
+                "--source",
+                "alma",
+                "--run-date",
+                "2024-12-01",
+                "--run-id",
+                "abc123",
+                "tests/fixtures/dataset",
+            ],
+        )
     assert result.exit_code == EXIT_CODES["success"]
     assert (
         "Bulk update complete: "
@@ -243,7 +244,7 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
 ):
     monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
     mock_bulk_index.side_effect = BulkActionError(
-        action="index", record="alma:0", index="index", error="exception"
+        action="index", record="alma:0", index="index", status=400, error="exception"
     )
     mock_bulk_delete.return_value = {"deleted": 0, "errors": 0, "total": 0}
     mock_validate_bulk_cli_options.return_value = "alma"
@@ -255,19 +256,20 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
         "total": 0,
     }
 
-    result = runner.invoke(
-        main,
-        [
-            "bulk-update",
-            "--source",
-            "alma",
-            "--run-date",
-            "2024-12-01",
-            "--run-id",
-            "abc123",
-            "tests/fixtures/dataset",
-        ],
-    )
+    with patch("tim.cli._publish_index_doc_count_metric"):
+        result = runner.invoke(
+            main,
+            [
+                "bulk-update",
+                "--source",
+                "alma",
+                "--run-date",
+                "2024-12-01",
+                "--run-id",
+                "abc123",
+                "tests/fixtures/dataset",
+            ],
+        )
     assert result.exit_code == EXIT_CODES["success"]
     assert (
         "Bulk update complete: "
@@ -323,7 +325,7 @@ def test_bulk_update_embeddings_exit_bulk_operation_error(
 ):
     monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
     mock_bulk_update.side_effect = BulkActionError(
-        action="update", record="alma:0", index="index", error="exception"
+        action="update", record="alma:0", index="index", status=400, error="exception"
     )
     mock_validate_bulk_cli_options.return_value = "libguides"
 
@@ -420,7 +422,7 @@ def test_bulk_update_fulltexts_exit_bulk_operation_error(
 ):
     monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
     mock_bulk_update.side_effect = BulkActionError(
-        action="update", record="alma:0", index="index", error="exception"
+        action="update", record="alma:0", index="index", status=400, error="exception"
     )
     mock_validate_bulk_cli_options.return_value = "libguides"
 
@@ -499,15 +501,16 @@ def test_reindex_source_success(
         "total": 10,
     }
 
-    result = runner.invoke(
-        main,
-        [
-            "reindex-source",
-            "--source",
-            "alma",
-            "tests/fixtures/dataset",
-        ],
-    )
+    with patch("tim.cli._publish_index_doc_count_metric"):
+        result = runner.invoke(
+            main,
+            [
+                "reindex-source",
+                "--source",
+                "alma",
+                "tests/fixtures/dataset",
+            ],
+        )
     assert result.exit_code == EXIT_CODES["success"]
     assert (
         "Reindex source complete: "
@@ -539,16 +542,17 @@ def test_reindex_source_skip_embeddings(
         "total": 1000,
     }
 
-    result = runner.invoke(
-        main,
-        [
-            "reindex-source",
-            "--source",
-            "alma",
-            "--skip-embeddings",
-            "tests/fixtures/dataset",
-        ],
-    )
+    with patch("tim.cli._publish_index_doc_count_metric"):
+        result = runner.invoke(
+            main,
+            [
+                "reindex-source",
+                "--source",
+                "alma",
+                "--skip-embeddings",
+                "tests/fixtures/dataset",
+            ],
+        )
     assert result.exit_code == EXIT_CODES["success"]
     assert "Skipping embeddings update." in caplog.text
     mock_bulk_update.assert_not_called()
