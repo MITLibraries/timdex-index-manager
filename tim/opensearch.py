@@ -381,7 +381,7 @@ def bulk_delete(
                     client, index, record_id=record_id, action=action
                 )
                 result_summary["deleted"] += 1
-            except (RetryFailedWithUnexpectedError, TimeoutError):
+            except (NotFoundError, RetryFailedWithUnexpectedError, TimeoutError):
                 logger.exception(f"Retries of '{action}' for {record_id} failed")
                 result_summary["errors"] += 1
         else:
@@ -455,20 +455,29 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
             result_summary["updated"] += 1
         elif error["type"] == "mapper_parsing_exception":
             logger.error(
-                "Error indexing record '%s'. Details: %s",
+                "Error indexing record '%s' with status %s. Details: %s",
                 record_id,
+                status,
                 json.dumps(error),
             )
             result_summary["errors"] += 1
         elif status == TRANSPORT_ERROR_507:
-            retry_response = execute_single_record_action(
-                client,
-                index,
-                record_id=record_id,
-                body=actions_cache[record_id][0]["_source"],
-                action=action,
-            )
-            result_summary[retry_response["result"]] += 1
+            try:
+                retry_response = execute_single_record_action(
+                    client,
+                    index,
+                    record_id=record_id,
+                    body=actions_cache[record_id][0]["_source"],
+                    action=action,
+                )
+                result_summary[retry_response["result"]] += 1
+            except RequestError as exception:
+                logger.exception(
+                    "Error indexing record '%s' with status %s.",
+                    record_id,
+                    exception.status_code,
+                )
+                result_summary["errors"] += 1
         else:
             raise BulkActionError(
                 action=action,
@@ -546,23 +555,32 @@ def bulk_update(
             "document_missing_exception",
         ]:
             logger.error(
-                "Error updating record '%s'. Details: %s",
+                "Error updating record '%s' with status %s. Details: %s",
                 record_id,
+                status,
                 json.dumps(error),
             )
             result_summary["errors"] += 1
         elif status == TRANSPORT_ERROR_507:
-            retry_response = execute_single_record_action(
-                client,
-                index,
-                record_id=record_id,
-                body=actions_cache[record_id][0]["doc"],
-                action=action,
-            )
-            if retry_response["result"] == "updated":
-                result_summary["updated"] += 1
-            elif retry_response["result"] == "noop":
-                result_summary["skipped"] += 1
+            try:
+                retry_response = execute_single_record_action(
+                    client,
+                    index,
+                    record_id=record_id,
+                    body=actions_cache[record_id][0]["doc"],
+                    action=action,
+                )
+                if retry_response["result"] == "updated":
+                    result_summary["updated"] += 1
+                elif retry_response["result"] == "noop":
+                    result_summary["skipped"] += 1
+            except (NotFoundError, RequestError) as exception:
+                logger.exception(
+                    "Error updating record '%s' with status %s.",
+                    record_id,
+                    exception.status_code,
+                )
+                result_summary["errors"] += 1
         else:
             raise BulkActionError(
                 action=action,

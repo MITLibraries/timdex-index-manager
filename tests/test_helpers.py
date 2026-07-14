@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 from click.exceptions import BadParameter
 from freezegun import freeze_time
-from opensearchpy.exceptions import TransportError
+from opensearchpy.exceptions import NotFoundError, RequestError, TransportError
 
 from tim import helpers
 from tim.errors import RetryFailedWithUnexpectedError
@@ -62,7 +62,7 @@ def test_retry_decorator_without_sleep(mock_sleep):
 
 
 @patch("tim.helpers.time.sleep")
-def test_retry_decorator_raises_single_operation_error(mock_sleep):
+def test_retry_decorator_raises_retry_failed_with_unexpected_error(mock_sleep):
     """Retry resulting in unexpected error raises error."""
 
     @helpers.retry()
@@ -70,6 +70,34 @@ def test_retry_decorator_raises_single_operation_error(mock_sleep):
         raise Exception("Unexpected error")  # noqa: TRY002
 
     with pytest.raises(RetryFailedWithUnexpectedError):
+        hello_world()
+
+
+@patch("tim.helpers.time.sleep")
+def test_retry_decorator_raises_not_found_error(mock_sleep):
+    """Retry raises NotFoundError caused by missing documents."""
+
+    @helpers.retry()
+    def hello_world():
+        raise NotFoundError
+
+    with pytest.raises(NotFoundError):
+        hello_world()
+
+
+@patch("tim.helpers._is_mapper_parsing_exception")
+@patch("tim.helpers.time.sleep")
+def test_retry_decorator_raises_mapper_parsing_request_error(
+    mock_sleep, mock_is_mapper_parsing_exception
+):
+    """Retry raises RequestError caused by mapper parsing exception."""
+    mock_is_mapper_parsing_exception.return_value = True
+
+    @helpers.retry()
+    def hello_world():
+        raise RequestError
+
+    with pytest.raises(RequestError):
         hello_world()
 
 

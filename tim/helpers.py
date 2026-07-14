@@ -7,7 +7,7 @@ from collections.abc import Callable, Generator, Iterator
 from datetime import UTC, datetime
 
 import click
-from opensearchpy.exceptions import TransportError
+from opensearchpy.exceptions import NotFoundError, RequestError, TransportError
 
 from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
 from tim.errors import RetryFailedWithUnexpectedError
@@ -21,6 +21,18 @@ def retry(
     max_attempts: int = 8,
 ) -> Callable:
     """Retry the decorated function until success or max attempts reached.
+
+    This retry is opinionated towards uses of opensearchpy's non-bulk API methods,
+    which raise exceptions when OpenSearch returns an error response. The retry
+    handles the following errors:
+        - NotFoundError: Raised when 'update' or 'delete' action cannot find document
+          - Effect: Re-raise exception
+        - RequestError (mapper parsing exception): Raised when 'index' or 'update'
+          cannot map document to schema/mapping
+          - Effect: Re-raise exception
+        - TransportError (507, "Insufficient Storage"): May be raised when AOSS requires
+          OCU scaling.
+          - Effect: Delay with progressive backoff
 
     Args:
         delay: Time to wait, in seconds, between retry attempts. This value is
@@ -39,6 +51,15 @@ def retry(
 
                 try:
                     return func(*args, **kwargs)
+                except NotFoundError:
+                    raise
+                except RequestError as exception:
+                    if _is_mapper_parsing_exception(exception):
+                        raise
+                    logger.exception(
+                        f"{func.__name__} raised unexpected exception, attempt {attempt}"
+                    )
+                    raise RetryFailedWithUnexpectedError from exception
                 except Exception as exception:
                     if (
                         isinstance(exception, TransportError)
@@ -62,6 +83,31 @@ def retry(
         return wrapper
 
     return retry_decorator
+
+
+def _is_mapper_parsing_exception(exception: Exception) -> bool:
+    if not isinstance(exception, RequestError):
+        return False
+
+    info = getattr(exception, "info", None)
+    if not isinstance(info, dict):
+        return False
+
+    error = info.get("error")
+    if not isinstance(error, dict):
+        return False
+
+    if error.get("type") == "mapper_parsing_exception":
+        return True
+
+    root_cause = error.get("root_cause", [])
+    if isinstance(root_cause, list):
+        return any(
+            isinstance(cause, dict) and cause.get("type") == "mapper_parsing_exception"
+            for cause in root_cause
+        )
+
+    return False
 
 
 def confirm_action(input_prompt: str) -> bool:
