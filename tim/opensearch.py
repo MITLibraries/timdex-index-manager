@@ -553,6 +553,7 @@ def bulk_update(
         elif error["type"] in [
             "mapper_parsing_exception",
             "document_missing_exception",
+            "document_missing_in_index_exception",
         ]:
             logger.error(
                 "Error updating record '%s' with status %s. Details: %s",
