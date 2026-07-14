@@ -657,7 +657,7 @@ def test_bulk_update_records_error_record_not_found(
     results = tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates))
     assert results["errors"] == 1
     assert (
-        """Error updating record 'i-am-not-found'. """
+        """Error updating record 'i-am-not-found' with status 404. """
         """Details: {"type": "document_missing_exception", """
         """"reason": "[i-am-not-found]: document missing","""
     ) in caplog.text
