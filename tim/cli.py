@@ -9,7 +9,7 @@ from timdex_dataset_api import TIMDEXDataset
 from tim import errors, helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
-from tim.errors import BulkIndexingError, BulkOperationError, SingleOperationError
+from tim.errors import BulkActionError, RetryFailedWithUnexpectedError
 
 logger = logging.getLogger(__name__)
 
@@ -313,7 +313,7 @@ def bulk_update(
     )
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
-    except (BulkIndexingError, SingleOperationError, TimeoutError) as exception:
+    except (BulkActionError, RetryFailedWithUnexpectedError, TimeoutError) as exception:
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk delete records
@@ -413,7 +413,7 @@ def bulk_update_embeddings(
     try:
         update_results = tim_os.bulk_update(client, index, embeddings_to_index)
         logger.info(f"Bulk update with embeddings complete: {json.dumps(update_results)}")
-    except (BulkOperationError, SingleOperationError, TimeoutError) as exception:
+    except (BulkActionError, RetryFailedWithUnexpectedError, TimeoutError) as exception:
         logger.error(f"Bulk update with embeddings failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
 
@@ -499,7 +499,7 @@ def bulk_update_fulltexts(
     try:
         update_results = tim_os.bulk_update(client, index, fulltexts_to_index)
         logger.info(f"Bulk update with fulltexts complete: {json.dumps(update_results)}")
-    except (BulkOperationError, SingleOperationError, TimeoutError) as exception:
+    except (BulkActionError, RetryFailedWithUnexpectedError, TimeoutError) as exception:
         logger.error(f"Bulk update with fulltexts failed: {exception}")  # noqa: TRY400
         ctx.exit(1)
 
@@ -580,7 +580,7 @@ def reindex_source(
     )
     try:
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
-    except (BulkIndexingError, SingleOperationError, TimeoutError) as exception:
+    except (BulkActionError, RetryFailedWithUnexpectedError, TimeoutError) as exception:
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
 
     # bulk index embeddings
@@ -602,7 +602,11 @@ def reindex_source(
         embeddings_to_index = helpers.format_embeddings(embeddings)
         try:
             update_results.update(tim_os.bulk_update(client, index, embeddings_to_index))
-        except (BulkOperationError, SingleOperationError, TimeoutError) as exception:
+        except (
+            BulkActionError,
+            RetryFailedWithUnexpectedError,
+            TimeoutError,
+        ) as exception:
             logger.error(  # noqa: TRY400
                 f"Bulk update with embeddings failed: {exception}"
             )

@@ -7,7 +7,7 @@ from click.exceptions import BadParameter, UsageError
 from freezegun import freeze_time
 
 from tim.cli import main, validate_bulk_cli_options
-from tim.errors import BulkIndexingError, BulkOperationError
+from tim.errors import BulkActionError
 
 from .conftest import EXIT_CODES, my_vcr
 
@@ -242,8 +242,8 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
     runner,
 ):
     monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
-    mock_bulk_index.side_effect = BulkIndexingError(
-        record="alma:0", index="index", error="exception"
+    mock_bulk_index.side_effect = BulkActionError(
+        action="index", record="alma:0", index="index", error="exception"
     )
     mock_bulk_delete.return_value = {"deleted": 0, "errors": 0, "total": 0}
     mock_validate_bulk_cli_options.return_value = "alma"
@@ -322,7 +322,7 @@ def test_bulk_update_embeddings_exit_bulk_operation_error(
     mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
 ):
     monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
-    mock_bulk_update.side_effect = BulkOperationError(
+    mock_bulk_update.side_effect = BulkActionError(
         action="update", record="alma:0", index="index", error="exception"
     )
     mock_validate_bulk_cli_options.return_value = "libguides"
@@ -419,7 +419,7 @@ def test_bulk_update_fulltexts_exit_bulk_operation_error(
     mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
 ):
     monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
-    mock_bulk_update.side_effect = BulkOperationError(
+    mock_bulk_update.side_effect = BulkActionError(
         action="update", record="alma:0", index="index", error="exception"
     )
     mock_validate_bulk_cli_options.return_value = "libguides"

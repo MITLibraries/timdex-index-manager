@@ -6,7 +6,7 @@ from freezegun import freeze_time
 from opensearchpy.exceptions import TransportError
 
 from tim import helpers
-from tim.errors import SingleOperationError
+from tim.errors import RetryFailedWithUnexpectedError
 
 
 @freeze_time("2026-07-09 10:00:00", auto_tick_seconds=10)
@@ -69,7 +69,7 @@ def test_retry_decorator_raises_single_operation_error(mock_sleep):
     def hello_world():
         raise Exception("Unexpected error")  # noqa: TRY002
 
-    with pytest.raises(SingleOperationError):
+    with pytest.raises(RetryFailedWithUnexpectedError):
         hello_world()
 
 

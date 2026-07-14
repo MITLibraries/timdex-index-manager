@@ -18,10 +18,10 @@ from tim.config import (
 )
 from tim.errors import (
     AliasNotFoundError,
-    BulkIndexingError,
-    BulkOperationError,
+    BulkActionError,
     IndexExistsError,
     IndexNotFoundError,
+    RetryFailedWithUnexpectedError,
 )
 
 logger = logging.getLogger(__name__)
@@ -333,12 +333,21 @@ def bulk_delete(
 ) -> dict[str, int]:
     """Delete records from an existing index using the streaming bulk helper.
 
-    If an error occurs during record deletion, it will be logged and bulk deletion will
-    continue until all records have been processed.
+    The `streaming_bulk()` method returns a tuple with a boolean indicating whether
+    the action succeeded and the API response as a dict. The "result" value in the
+    API response is used to identify successful actions.
+        - If result="not_found", the error message is logged
+          and the method continues.
+        - If an error is caused by a `TransportError` with status 507
+          ("Insufficient Storage"), the method will retry the "index" action for
+          the record. If the retry results in a `RetryFailedWithUnexpectedError`
+          or `TimeoutError`, the exception is logged and the method continues.
+        - If an error is unknown, the error message is logged
+          and the method continues.
 
     Returns total sums of: records deleted, errors, and total records processed.
     """
-    result = {"deleted": 0, "errors": 0, "total": 0}
+    result_summary = {"deleted": 0, "errors": 0, "total": 0}
     actions = helpers.generate_bulk_actions(index, records, "delete")
     responses = streaming_bulk(
         client,
@@ -349,39 +358,69 @@ def bulk_delete(
         max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
         raise_on_error=False,
     )
-    for response in responses:
-        logger.debug(response)
-        if response[1]["delete"].get("result") == "not_found":
+    for _, item in responses:
+        action, response = next(iter(item.items()))
+
+        # parse item details from response
+        record_id = response.get("_id")
+        status = response.get("status")
+        result = response.get("result")
+
+        if result == "deleted":
+            result_summary["deleted"] += 1
+        elif result == "not_found":
             logger.error(
                 "Record to delete '%s' was not found in index '%s'.",
-                response[1]["delete"]["_id"],
+                record_id,
                 index,
             )
-            result["errors"] += 1
-        elif response[1]["delete"].get("result") == "deleted":
-            result["deleted"] += 1
+            result_summary["errors"] += 1
+        elif status == TRANSPORT_ERROR_507:
+            try:
+                execute_single_record_action(
+                    client, index, record_id=record_id, action=action
+                )
+                result_summary["deleted"] += 1
+            except (RetryFailedWithUnexpectedError, TimeoutError):
+                logger.exception(f"Retries of '{action}' for {record_id} failed")
+                result_summary["errors"] += 1
         else:
             logger.error(
                 "Something unexpected happened during deletion. Bulk delete response: %s",
                 json.dumps(response),
             )
-            result["errors"] += 1
-        result["total"] += 1
-        if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
-            logger.info("Status update: %s records deleted so far!", result["total"])
-    return result
+            result_summary["errors"] += 1
+        result_summary["total"] += 1
+
+        if (
+            result_summary["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000"))
+            == 0
+        ):
+            logger.info(
+                "Status update: %s records deleted so far!", result_summary["total"]
+            )
+
+    return result_summary
 
 
 def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[str, int]:
     """Indexes records into an existing index using the streaming bulk helper.
 
     This action function uses the OpenSearch "index" action, which is a
-    combination of create and update: if a record with the same _id exists in the
+    combination of create and update: if a record with the same `_id` exists in the
     index, it will be updated. If it does not exist, the record will be indexed as a
     new document.
 
-    If an error occurs during record indexing, it will be logged and bulk indexing will
-    continue until all records have been processed.
+    The `streaming_bulk()` method returns a tuple with a boolean indicating whether
+    the action succeeded and the API response as a dict. The "result" value in the
+    API response is used to identify successful actions.
+        - If an error is caused by "mapper parsing", the error message
+          is logged, the record is skipped, and the method continues indexing.
+        - If an error is caused by a `TransportError` with status 507
+          ("Insufficient Storage"), the method will retry the "index" action for
+          the record. If the retry results in a `RetryFailedWithUnexpectedError`
+          or `TimeoutError`, the exception propagates to the caller.
+        - If an error is unknown, a `BulkActionError` is raised.
 
     NOTE: The update performed by the "index" action results in a full replacement of the
     document in OpenSearch. If a partial record is provided, this will result in a new
@@ -390,7 +429,7 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
     Returns total sums of: records created, records updated, errors, and total records
     processed.
     """
-    result = {"created": 0, "updated": 0, "errors": 0, "total": 0}
+    result_summary = {"created": 0, "updated": 0, "errors": 0, "total": 0}
     actions_cache: defaultdict = defaultdict(deque)
     actions = helpers.generate_bulk_actions(index, records, "index", actions_cache)
     responses = streaming_bulk(
@@ -401,48 +440,56 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
         max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
         raise_on_error=False,
     )
-    for response in responses:
-        record_id = response[1]["index"]["_id"]
-        if response[0] is False:
-            status = response[1]["index"]["status"]
-            error = response[1]["index"]["error"]
-            if error["type"] == "mapper_parsing_exception":
-                logger.error(
-                    "Error indexing record '%s'. Details: %s",
-                    record_id,
-                    json.dumps(error),
-                )
-                result["errors"] += 1
-            elif status == TRANSPORT_ERROR_507:
-                retry_response = execute_single_record_action(
-                    client,
-                    index,
-                    record_id=record_id,
-                    body=actions_cache[record_id][0]["_source"],
-                    operation="index",
-                )
-                result[retry_response["result"]] += 1
-            else:
-                raise BulkIndexingError(record_id, index, json.dumps(error))
-        elif response[1]["index"].get("result") == "created":
-            result["created"] += 1
-        elif response[1]["index"].get("result") == "updated":
-            result["updated"] += 1
-        else:
+    for _, item in responses:
+        action, response = next(iter(item.items()))
+
+        # parse item details from response
+        record_id = response.get("_id")
+        status = response.get("status")
+        result = response.get("result")
+        error = response.get("error")
+
+        if result == "created":
+            result_summary["created"] += 1
+        elif result == "updated":
+            result_summary["updated"] += 1
+        elif error["type"] == "mapper_parsing_exception":
             logger.error(
-                "Something unexpected happened during ingest. Bulk index response: %s",
-                json.dumps(response),
+                "Error indexing record '%s'. Details: %s",
+                record_id,
+                json.dumps(error),
             )
-            result["errors"] += 1
-        result["total"] += 1
+            result_summary["errors"] += 1
+        elif status == TRANSPORT_ERROR_507:
+            retry_response = execute_single_record_action(
+                client,
+                index,
+                record_id=record_id,
+                body=actions_cache[record_id][0]["_source"],
+                action=action,
+            )
+            result_summary[retry_response["result"]] += 1
+        else:
+            raise BulkActionError(
+                action=action,
+                record=record_id,
+                index=index,
+                error=json.dumps(error),
+            )
+        result_summary["total"] += 1
 
         # remove record action from cache after processing
         helpers.pop_cache_entry(actions_cache, record_id)
 
-        if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
-            logger.info("Status update: %s records indexed so far!", result["total"])
+        if (
+            result_summary["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000"))
+            == 0
+        ):
+            logger.info(
+                "Status update: %s records indexed so far!", result_summary["total"]
+            )
 
-    return result
+    return result_summary
 
 
 def bulk_update(
@@ -455,10 +502,22 @@ def bulk_update(
     a full or partial record and will only update the corresponding fields in the
     document.
 
+    The `streaming_bulk()` method returns a tuple with a boolean indicating whether
+    the action succeeded and the API response as a dict. The "result" value in the
+    API response is used to identify successful actions.
+        - If an error is caused by "mapper parsing" or "document missing",
+          the error message is logged, the record is skipped, and the method continues
+          indexing.
+        - If an error is caused by a `TransportError` with status 507
+          ("Insufficient Storage"), the method will retry the "index" action for
+          the record. If the retry results in a `RetryFailedWithUnexpectedError`
+          or `TimeoutError`, the exception propagates to the caller.
+        - If an error is unknown, a `BulkActionError` is raised.
+
     Returns total sums of: records updated, errors, and total records
     processed.
     """
-    result = {"updated": 0, "skipped": 0, "errors": 0, "total": 0}
+    result_summary = {"updated": 0, "skipped": 0, "errors": 0, "total": 0}
     actions_cache: defaultdict = defaultdict(deque)
     actions = helpers.generate_bulk_actions(index, records, "update", actions_cache)
     responses = streaming_bulk(
@@ -469,65 +528,71 @@ def bulk_update(
         max_chunk_bytes=REQUEST_CONFIG["OPENSEARCH_BULK_MAX_CHUNK_BYTES"],
         raise_on_error=False,
     )
-    for response in responses:
-        record_id = response[1]["update"]["_id"]
-        if response[0] is False:
-            status = response[1]["update"]["status"]
-            error = response[1]["update"]["error"]
-            if error["type"] in [
-                "mapper_parsing_exception",
-                "document_missing_exception",
-            ]:
-                logger.error(
-                    "Error updating record '%s'. Details: %s",
-                    record_id,
-                    json.dumps(error),
-                )
-                result["errors"] += 1
-            elif status == TRANSPORT_ERROR_507:
-                retry_response = execute_single_record_action(
-                    client,
-                    index,
-                    record_id=record_id,
-                    body=actions_cache[record_id][0]["doc"],
-                    operation="update",
-                )
-                if retry_response["result"] == "updated":
-                    result["updated"] += 1
-                elif retry_response["result"] == "noop":
-                    result["skipped"] += 1
-            else:
-                message = "update"
-                raise BulkOperationError(
-                    message,
-                    record_id,
-                    index,
-                    json.dumps(error),
-                )
-        elif response[1]["update"].get("result") == "updated":
-            result["updated"] += 1
-        elif response[1]["update"].get("result") == "noop":
-            result["skipped"] += 1
-        else:
+    for _, item in responses:
+        action, response = next(iter(item.items()))
+
+        # parse item details from response
+        record_id = response.get("_id")
+        status = response.get("status")
+        result = response.get("result")
+        error = response.get("error")
+
+        if result == "updated":
+            result_summary["updated"] += 1
+        elif result == "noop":
+            result_summary["skipped"] += 1
+        elif error["type"] in [
+            "mapper_parsing_exception",
+            "document_missing_exception",
+        ]:
             logger.error(
-                "Something unexpected happened during update. Bulk update response: %s",
-                json.dumps(response),
+                "Error updating record '%s'. Details: %s",
+                record_id,
+                json.dumps(error),
             )
-            result["errors"] += 1
-        result["total"] += 1
+            result_summary["errors"] += 1
+        elif status == TRANSPORT_ERROR_507:
+            retry_response = execute_single_record_action(
+                client,
+                index,
+                record_id=record_id,
+                body=actions_cache[record_id][0]["doc"],
+                action=action,
+            )
+            if retry_response["result"] == "updated":
+                result_summary["updated"] += 1
+            elif retry_response["result"] == "noop":
+                result_summary["skipped"] += 1
+        else:
+            raise BulkActionError(
+                action=action,
+                record=record_id,
+                index=index,
+                error=json.dumps(error),
+            )
+        result_summary["total"] += 1
 
         # remove record action from cache after processing
         helpers.pop_cache_entry(actions_cache, record_id)
 
-        if result["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000")) == 0:
-            logger.info("Status update: %s records updated so far!", result["total"])
+        if (
+            result_summary["total"] % int(os.getenv("STATUS_UPDATE_INTERVAL", "1000"))
+            == 0
+        ):
+            logger.info(
+                "Status update: %s records updated so far!", result_summary["total"]
+            )
 
-    return result
+    return result_summary
 
 
 @helpers.retry()
 def execute_single_record_action(
-    client: OpenSearch, index: str, record_id: str, body: dict, operation: str
+    client: OpenSearch,
+    index: str,
+    record_id: str,
+    action: str,
+    body: dict | None = None,
 ) -> dict[str, Any]:
     """Execute an OpenSearch action for a single record.
 
@@ -535,13 +600,13 @@ def execute_single_record_action(
     is dispatched to the corresponding OpenSearch client method based on
     `operation`.
     """
-    logger.info(f"Retrying '{operation}' operation for {record_id}")
-    method = getattr(client, operation)
-    if operation == "index":
+    logger.info(f"Retrying '{action}' operation for {record_id}")
+    method = getattr(client, action)
+    if action == "index":
         method_args = {"index": index, "id": record_id, "body": body}
-    elif operation == "update":
+    elif action == "update":
         method_args = {"index": index, "id": record_id, "body": {"doc": body}}
-    elif operation == "delete":
+    elif action == "delete":
         method_args = {
             "index": index,
             "id": record_id,
