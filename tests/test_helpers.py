@@ -9,7 +9,6 @@ from tim import helpers
 from tim.errors import RetryFailedWithUnexpectedError
 
 
-@freeze_time("2026-07-09 10:00:00", auto_tick_seconds=10)
 @patch("tim.helpers.time.sleep")
 def test_retry_decorator_with_sleep_success(mock_sleep):
     """Retry resulting in retryable error returns success within allowed time."""

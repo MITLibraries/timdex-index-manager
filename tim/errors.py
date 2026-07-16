@@ -22,7 +22,9 @@ class BulkIndexingError(Exception):
 class BulkActionError(Exception):
     """Exception raised when an unexpected error is returned during a bulk operation."""
 
-    def __init__(self, action: str, record: str, index: str, error: str) -> None:
+    def __init__(
+        self, action: str, record: str, index: str, status: int, error: str
+    ) -> None:
         """Initialize exception with provided index name and error for message."""
         if action == "index":
             verb = "indexing"
@@ -30,7 +32,8 @@ class BulkActionError(Exception):
             verb = "updating"
 
         self.message = (
-            f"Error {verb} record '{record}' into index '{index}'. Details: {error}"
+            f"Error {verb} record '{record}' into index '{index}' with "
+            f"status {status}. Details: {error}"
         )
         super().__init__(self.message)
 

@@ -7,7 +7,7 @@ from typing import Any
 
 import boto3
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
-from opensearchpy.exceptions import NotFoundError, RequestError
+from opensearchpy.exceptions import NotFoundError, RequestError, TransportError
 from opensearchpy.helpers import streaming_bulk
 
 from tim import helpers
@@ -122,6 +122,16 @@ def get_indexes(client: OpenSearch) -> dict[str, dict] | None:
         for index in response
     }
     return indexes or None
+
+
+def get_index_doc_count(client: OpenSearch, index: str, query: dict | None = None) -> int:
+    """Get the number of documents for an index.
+
+    Optionally set a "query" to restrict the results specified with the
+    Query DSL.
+    """
+    response = client.count(body=query, index=index)
+    return response["count"]
 
 
 def get_formatted_indexes(client: OpenSearch) -> str:
@@ -306,6 +316,27 @@ def promote_index(
         raise
 
 
+def refresh_index(client: OpenSearch, index: str) -> bool:
+    """Refresh index to make recent changes available.
+
+    NOTE: This operation is resource-intensive and should be used
+    sparingly (i.e., not for every individual write operation).
+    """
+    try:
+        client.indices.refresh(index=index)
+    except TransportError as exception:
+        logger.warning(
+            f"Error refreshing index '{index}' with status {exception.status_code}. "
+            f"Details: {exception}"
+        )
+    except Exception as exception:  # noqa: BLE001
+        logger.warning(f"Error refreshing index '{index}'. Details: {exception}")
+    else:
+        logger.info(f"Refreshed index '{index}'.")
+        return True
+    return False
+
+
 def remove_alias(client: OpenSearch, index: str, alias: str) -> None:
     """Remove the provided alias from the provided index."""
     try:
@@ -483,6 +514,7 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
                 action=action,
                 record=record_id,
                 index=index,
+                status=status,
                 error=json.dumps(error),
             )
         result_summary["total"] += 1
@@ -587,6 +619,7 @@ def bulk_update(
                 action=action,
                 record=record_id,
                 index=index,
+                status=status,
                 error=json.dumps(error),
             )
         result_summary["total"] += 1

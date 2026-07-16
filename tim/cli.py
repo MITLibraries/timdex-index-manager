@@ -10,6 +10,7 @@ from tim import errors, helpers
 from tim import opensearch as tim_os
 from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
 from tim.errors import BulkActionError, RetryFailedWithUnexpectedError
+from tim.utils.aws import CloudWatchMetricsClient, Metric
 
 logger = logging.getLogger(__name__)
 
@@ -305,6 +306,15 @@ def bulk_update(
 
     td = TIMDEXDataset(location=dataset_path)
 
+    # get doc counts for index before any actions
+    index_initial_doc_count = None
+    get_index_doc_count_with_retry = helpers.retry()(tim_os.get_index_doc_count)
+    try:
+        index_initial_doc_count = get_index_doc_count_with_retry(client, index)
+        logger.info(f"Initial doc count for index '{index}': {index_initial_doc_count}")
+    except (RetryFailedWithUnexpectedError, TimeoutError):
+        logger.warning(f"Could not determine initial doc count for index {index}.")
+
     # bulk index records
     records_to_index = td.records.read_transformed_records_iter(
         run_date=run_date,
@@ -324,6 +334,19 @@ def bulk_update(
         action="delete",
     )
     delete_results.update(tim_os.bulk_delete(client, index, records_to_delete))
+
+    # get current doc count for index after bulk index and delete
+    if index_initial_doc_count is not None:
+        _publish_index_doc_count_metric(
+            client,
+            index,
+            expected_count=(index_initial_doc_count - delete_results["deleted"]),
+        )
+    else:
+        logger.warning(
+            "'Index Doc Count' metric may be inaccurate without initial doc count"
+        )
+        _publish_index_doc_count_metric(client, index)
 
     summary_results = {"index": index_results, "delete": delete_results}
     logger.info(f"Bulk update complete: {json.dumps(summary_results)}")
@@ -611,8 +634,52 @@ def reindex_source(
                 f"Bulk update with embeddings failed: {exception}"
             )
 
+    # get current doc count for index after bulk index and update
+    _publish_index_doc_count_metric(
+        client, index, expected_count=index_results["created"]
+    )
+
     summary_results = {"index": index_results, "update": update_results}
     logger.info(f"Reindex source complete: {json.dumps(summary_results)}")
+
+
+def _publish_index_doc_count_metric(
+    client: tim_os.OpenSearch, index: str, expected_count: int | None = None
+) -> None:
+    """Publish 'Index Doc Count' metric to CloudWatch.
+
+    This method relies on a retryable `get_index_doc_count()` method.
+    If `expected_count` is set, the method will set an `until_condition` as
+    part of the retry, which will instruct TIM to retry query of document
+    counts until the count == `expected_count`.
+    """
+    cloudwatch_metrics_client = CloudWatchMetricsClient()
+
+    # set retry on get_index_doc_count
+    if expected_count is not None:
+        get_index_doc_count_with_retry = helpers.retry(
+            until_condition=lambda count: count == expected_count
+        )(tim_os.get_index_doc_count)
+    else:
+        get_index_doc_count_with_retry = helpers.retry()(tim_os.get_index_doc_count)
+
+    try:
+        index_doc_count = get_index_doc_count_with_retry(client, index)
+    except (RetryFailedWithUnexpectedError, TimeoutError):
+        logger.warning(
+            f"Could not determine doc count for index {index};"
+            f"cannot publish 'Index Doc Count' metric."
+        )
+    else:
+        cloudwatch_metrics_client.publish_metric(
+            metric=Metric(
+                name="Index Doc Count",
+                value=index_doc_count,
+                unit="Count",
+                dimensions=[{"index": index}],
+            ),
+            namespace="Timdex",
+        )
 
 
 def validate_bulk_cli_options(

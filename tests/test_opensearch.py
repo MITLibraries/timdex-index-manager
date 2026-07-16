@@ -512,6 +512,7 @@ def test_bulk_index_updates_records(
     caplog, monkeypatch, test_opensearch_client, five_valid_index_libguides_records
 ):
     monkeypatch.setenv("STATUS_UPDATE_INTERVAL", "5")
+
     assert tim_os.bulk_index(
         test_opensearch_client, "test-index", five_valid_index_libguides_records
     ) == {
@@ -633,6 +634,7 @@ def test_bulk_update_updates_records(test_opensearch_client):
             "title": "Materials Science & Engineering (UPDATED)",
         }
     ]
+
     assert tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates)) == {
         "updated": 1,
         "skipped": 0,
@@ -655,6 +657,7 @@ def test_bulk_update_records_error_record_not_found(
         }
     ]
     results = tim_os.bulk_update(test_opensearch_client, "test-index", iter(updates))
+
     assert results["errors"] == 1
     assert (
         """Error updating record 'i-am-not-found' with status 404. """
