@@ -369,9 +369,9 @@ def bulk_delete(
     API response is used to identify successful actions.
         - If result="not_found", the error message is logged
           and the method continues.
-        - If an error is caused by a `TransportError` with status 507
-          ("Insufficient Storage"), the method will retry the "index" action for
-          the record. If the retry results in a `RetryFailedWithUnexpectedError`
+        - If an error is caused by a `TransportError` with status 5XX,
+          the method will retry the "index" action for the record.
+          If the retry results in a `RetryFailedWithUnexpectedError`
           or `TimeoutError`, the exception is logged and the method continues.
         - If an error is unknown, the error message is logged
           and the method continues.
@@ -396,6 +396,7 @@ def bulk_delete(
         record_id = response.get("_id")
         status = response.get("status")
         result = response.get("result")
+        error = response.get("error")
 
         if result == "deleted":
             result_summary["deleted"] += 1
@@ -406,7 +407,13 @@ def bulk_delete(
                 index,
             )
             result_summary["errors"] += 1
-        elif status == TRANSPORT_ERROR_507:
+        elif 500 <= status < 600:  # noqa: PLR2004
+            logger.info(
+                "Error occured when trying to delete record '%s' with status %s. Details: %s",  # noqa: E501
+                record_id,
+                status,
+                json.dumps(error),
+            )
             try:
                 execute_single_record_action(
                     client, index, record_id=record_id, action=action
@@ -492,7 +499,13 @@ def bulk_index(client: OpenSearch, index: str, records: Iterator[dict]) -> dict[
                 json.dumps(error),
             )
             result_summary["errors"] += 1
-        elif status == TRANSPORT_ERROR_507:
+        elif 500 <= status < 600:  # noqa: PLR2004
+            logger.info(
+                "Error occured when trying to delete record '%s' with status %s. Details: %s",  # noqa: E501
+                record_id,
+                status,
+                json.dumps(error),
+            )
             try:
                 retry_response = execute_single_record_action(
                     client,
@@ -549,9 +562,9 @@ def bulk_update(
         - If an error is caused by "mapper parsing" or "document missing",
           the error message is logged, the record is skipped, and the method continues
           indexing.
-        - If an error is caused by a `TransportError` with status 507
-          ("Insufficient Storage"), the method will retry the "index" action for
-          the record. If the retry results in a `RetryFailedWithUnexpectedError`
+        - If an error is caused by a `TransportError` with status 5XX,
+          the method will retry the "index" action for the record.
+          If the retry results in a `RetryFailedWithUnexpectedError`
           or `TimeoutError`, the exception propagates to the caller.
         - If an error is unknown, a `BulkActionError` is raised.
 
@@ -594,7 +607,13 @@ def bulk_update(
                 json.dumps(error),
             )
             result_summary["errors"] += 1
-        elif status == TRANSPORT_ERROR_507:
+        elif 500 <= status < 600:  # noqa: PLR2004
+            logger.info(
+                "Error occured when trying to update record '%s' with status %s. Details: %s",  # noqa: E501
+                record_id,
+                status,
+                json.dumps(error),
+            )
             try:
                 retry_response = execute_single_record_action(
                     client,

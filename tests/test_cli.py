@@ -209,7 +209,7 @@ def test_bulk_update_with_source_success(
     mock_bulk_delete.return_value = {"deleted": 0, "errors": 0, "total": 0}
     mock_validate_bulk_cli_options.return_value = "alma"
 
-    with patch("tim.cli._publish_index_doc_count_metric"):
+    with patch("tim.cli._publish_index_doc_count_metric"), patch("tim.cli.helpers.retry"):
         result = runner.invoke(
             main,
             [
@@ -249,14 +249,7 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
     mock_bulk_delete.return_value = {"deleted": 0, "errors": 0, "total": 0}
     mock_validate_bulk_cli_options.return_value = "alma"
 
-    index_results_default = {
-        "created": 0,
-        "updated": 0,
-        "errors": 0,
-        "total": 0,
-    }
-
-    with patch("tim.cli._publish_index_doc_count_metric"):
+    with patch("tim.cli._publish_index_doc_count_metric"), patch("tim.cli.helpers.retry"):
         result = runner.invoke(
             main,
             [
@@ -270,12 +263,7 @@ def test_bulk_update_with_source_raise_bulk_indexing_error(
                 "tests/fixtures/dataset",
             ],
         )
-    assert result.exit_code == EXIT_CODES["success"]
-    assert (
-        "Bulk update complete: "
-        f'{{"index": {json.dumps(index_results_default)}, '
-        f'"delete": {json.dumps(mock_bulk_delete())}}}' in caplog.text
-    )
+    assert result.exit_code == EXIT_CODES["error"]
 
 
 @pytest.mark.parametrize(
