@@ -13,7 +13,6 @@ from tim.config import VALID_BULK_OPERATIONS, VALID_SOURCES
 from tim.errors import RetryFailedWithUnexpectedError
 
 logger = logging.getLogger(__name__)
-TRANSPORT_ERROR_507 = 507
 
 
 def retry(
@@ -31,8 +30,7 @@ def retry(
         - RequestError (mapper parsing exception): Raised when 'index' or 'update'
           cannot map document to schema/mapping
           - Effect: Re-raise exception
-        - TransportError (507, "Insufficient Storage"): May be raised when AOSS requires
-          OCU scaling.
+        - TransportError: May be raised when AOSS requires OCU scaling.
           - Effect: Delay with progressive backoff
 
     Args:
@@ -80,9 +78,8 @@ def retry(
                     )
                     raise RetryFailedWithUnexpectedError from exception
                 except Exception as exception:
-                    if (
-                        isinstance(exception, TransportError)
-                        and exception.status_code == TRANSPORT_ERROR_507
+                    if isinstance(exception, TransportError) and (
+                        500 <= int(exception.status_code) < 600  # noqa: PLR2004
                     ):
                         logger.warning(
                             f"{func.__name__} raised retryable exception, attempt {attempt}: "  # noqa: E501
@@ -94,7 +91,9 @@ def retry(
                         )
                         raise RetryFailedWithUnexpectedError from exception
 
-                logger.debug(f"Sleeping {delay} seconds before retrying {func.__name__}")
+                logger.debug(
+                    f"Sleeping {delay * attempt} seconds before retrying {func.__name__}"
+                )
                 time.sleep(delay * attempt)
 
             raise TimeoutError(f"Timed out after {attempt} attempts")

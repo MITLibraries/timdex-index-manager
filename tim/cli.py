@@ -325,6 +325,7 @@ def bulk_update(
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
     except (BulkActionError, RetryFailedWithUnexpectedError, TimeoutError) as exception:
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
+        ctx.exit(1)
 
     # bulk delete records
     records_to_delete = td.records.read_dicts_iter(
@@ -605,6 +606,7 @@ def reindex_source(
         index_results.update(tim_os.bulk_index(client, index, records_to_index))
     except (BulkActionError, RetryFailedWithUnexpectedError, TimeoutError) as exception:
         logger.error(f"Bulk indexing failed: {exception}")  # noqa: TRY400
+        ctx.exit(1)
 
     # bulk index embeddings
     update_results = {"updated": 0, "errors": 0, "total": 0}
@@ -633,6 +635,7 @@ def reindex_source(
             logger.error(  # noqa: TRY400
                 f"Bulk update with embeddings failed: {exception}"
             )
+            ctx.exit(1)
 
     # get current doc count for index after bulk index and update
     _publish_index_doc_count_metric(
