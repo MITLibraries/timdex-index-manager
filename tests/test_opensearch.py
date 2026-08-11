@@ -268,8 +268,10 @@ def test_get_all_aliased_indexes_for_source_multi_source_indexes_with_alias_logs
     assert (
         "tim.opensearch",
         logging.ERROR,
-        "Alias 'an-alias' had multiple existing indexes for source "
-        "'testsource': ['testsource-index-one', 'testsource-index-two']",
+        (
+            "Alias 'an-alias' had multiple existing indexes for source "
+            "'testsource': ['testsource-index-one', 'testsource-index-two']"
+        ),
     ) in caplog.record_tuples
 
 

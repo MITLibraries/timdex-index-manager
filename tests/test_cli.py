@@ -109,8 +109,10 @@ def test_create_index_exists(caplog, runner):
     assert (
         "tim.cli",
         40,
-        "Index 'aspace-2022-09-20t15-59-38' already exists in the cluster, cannot "
-        "create.",
+        (
+            "Index 'aspace-2022-09-20t15-59-38' already exists in the cluster, cannot "
+            "create."
+        ),
     ) in caplog.record_tuples
 
 
