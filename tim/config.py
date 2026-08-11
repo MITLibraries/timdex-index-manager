@@ -15,6 +15,7 @@ VALID_BULK_OPERATIONS = ["create", "delete", "index", "update"]
 VALID_SOURCES = [
     "alma",
     "aspace",
+    "digitalcollections",
     "dspace",
     "gismit",
     "gisogm",
