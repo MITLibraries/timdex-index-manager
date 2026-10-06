@@ -194,3 +194,36 @@ def test_validate_index_name_success():
         helpers.validate_index_name({}, "name", "aspace-2022-09-01t13-14-15")
         == "aspace-2022-09-01t13-14-15"
     )
+
+
+def test_format_fulltexts():
+    """Fulltext records with content are yielded as decoded strings."""
+    fulltexts = iter(
+        [
+            {"timdex_record_id": "dspace:1721.1-123", "fulltext": b"Hello, world"},
+            {"timdex_record_id": "dspace:1721.1-456", "fulltext": "café".encode()},
+        ]
+    )
+
+    assert list(helpers.format_fulltexts(fulltexts)) == [
+        {"timdex_record_id": "dspace:1721.1-123", "fulltext": "Hello, world"},
+        {"timdex_record_id": "dspace:1721.1-456", "fulltext": "café"},
+    ]
+
+
+def test_format_fulltexts_skips_null_content(caplog):
+    """Fulltext records with null content are skipped, not raising an error."""
+    fulltexts = iter(
+        [
+            {"timdex_record_id": "dspace:1721.1-123", "fulltext": b"Hello, world"},
+            {"timdex_record_id": "dspace:1721.1-46680.2", "fulltext": None},
+            {"timdex_record_id": "dspace:1721.1-456", "fulltext": "café".encode()},
+        ]
+    )
+
+    assert list(helpers.format_fulltexts(fulltexts)) == [
+        {"timdex_record_id": "dspace:1721.1-123", "fulltext": "Hello, world"},
+        {"timdex_record_id": "dspace:1721.1-456", "fulltext": "café"},
+    ]
+    assert "Skipping fulltext row with null content" in caplog.text
+    assert "dspace:1721.1-46680.2" in caplog.text
