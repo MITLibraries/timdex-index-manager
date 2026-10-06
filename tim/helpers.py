@@ -156,8 +156,19 @@ def format_embeddings(embeddings: Iterator[dict]) -> Iterator[dict]:
 
 
 def format_fulltexts(fulltexts: Iterator[dict]) -> Iterator[dict]:
-    """Format fulltexts for bulk update command."""
+    """Format fulltexts for bulk update command.
+
+    Fulltext rows with null content are skipped, as they represent records whose
+    current fulltext state is null/no content and therefore have nothing to
+    update in OpenSearch.
+    """
     for fulltext in fulltexts:
+        if fulltext["fulltext"] is None:
+            logger.warning(
+                f"Skipping fulltext row with null content "
+                f"for record '{fulltext['timdex_record_id']}'"
+            )
+            continue
         yield {
             "timdex_record_id": fulltext["timdex_record_id"],
             "fulltext": fulltext["fulltext"].decode(),
