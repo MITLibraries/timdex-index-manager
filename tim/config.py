@@ -26,6 +26,8 @@ VALID_SOURCES = [
     "whoas",
     "zenodo",
 ]
+# fulltexts are large, so join in smaller batches to keep DuckDB memory usage low
+FULLTEXTS_TDA_DUCKDB_JOIN_BATCH_SIZE = 1_000
 
 
 def configure_index_settings() -> tuple:

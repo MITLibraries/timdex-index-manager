@@ -1,14 +1,22 @@
 import json
 import logging
+import os
 from datetime import timedelta
 from time import perf_counter
 
 import rich_click as click
 from timdex_dataset_api import TIMDEXDataset
+from timdex_dataset_api.dataset import TIMDEXDatasetConfig
 
 from tim import errors, helpers
 from tim import opensearch as tim_os
-from tim.config import PRIMARY_ALIAS, VALID_SOURCES, configure_logger, configure_sentry
+from tim.config import (
+    FULLTEXTS_TDA_DUCKDB_JOIN_BATCH_SIZE,
+    PRIMARY_ALIAS,
+    VALID_SOURCES,
+    configure_logger,
+    configure_sentry,
+)
 from tim.errors import BulkActionError, RetryFailedWithUnexpectedError
 from tim.utils.aws import CloudWatchMetricsClient, Metric
 
@@ -490,7 +498,18 @@ def bulk_update_fulltexts(
         f"into '{index}'"
     )
 
-    td = TIMDEXDataset(location=dataset_path)
+    td = TIMDEXDataset(
+        location=dataset_path,
+        config=TIMDEXDatasetConfig(
+            duckdb_join_batch_size=int(
+                os.getenv(
+                    "FULLTEXTS_TDA_DUCKDB_JOIN_BATCH_SIZE",
+                    FULLTEXTS_TDA_DUCKDB_JOIN_BATCH_SIZE,
+                )
+            )
+        ),
+    )
+    logger.info(f"Using TDA DuckDB join batch size: {td.config.duckdb_join_batch_size}")
 
     # read fulltexts for a specific run
     if run_id:
