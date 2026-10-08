@@ -462,6 +462,44 @@ def test_bulk_update_fulltexts_source_only_logs_complete(
     )
 
 
+@patch("tim.cli.validate_bulk_cli_options")
+@patch("tim.opensearch.bulk_update")
+def test_bulk_update_fulltexts_uses_default_join_batch_size(
+    mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    monkeypatch.delenv("FULLTEXTS_TDA_DUCKDB_JOIN_BATCH_SIZE", raising=False)
+    mock_bulk_update.return_value = {"updated": 1, "errors": 0, "total": 1}
+    mock_validate_bulk_cli_options.return_value = "libguides"
+
+    result = runner.invoke(
+        main,
+        ["bulk-update-fulltexts", "--source", "libguides", "tests/fixtures/dataset"],
+    )
+
+    assert result.exit_code == EXIT_CODES["success"]
+    assert "Using TDA DuckDB join batch size: 1000" in caplog.text
+
+
+@patch("tim.cli.validate_bulk_cli_options")
+@patch("tim.opensearch.bulk_update")
+def test_bulk_update_fulltexts_join_batch_size_env_var_override(
+    mock_bulk_update, mock_validate_bulk_cli_options, caplog, monkeypatch, runner
+):
+    monkeypatch.delenv("TIMDEX_OPENSEARCH_ENDPOINT", raising=False)
+    monkeypatch.setenv("FULLTEXTS_TDA_DUCKDB_JOIN_BATCH_SIZE", "500")
+    mock_bulk_update.return_value = {"updated": 1, "errors": 0, "total": 1}
+    mock_validate_bulk_cli_options.return_value = "libguides"
+
+    result = runner.invoke(
+        main,
+        ["bulk-update-fulltexts", "--source", "libguides", "tests/fixtures/dataset"],
+    )
+
+    assert result.exit_code == EXIT_CODES["success"]
+    assert "Using TDA DuckDB join batch size: 500" in caplog.text
+
+
 @patch("tim.opensearch.create_index")
 @patch("tim.opensearch.promote_index")
 @patch("tim.opensearch.get_index_aliases")

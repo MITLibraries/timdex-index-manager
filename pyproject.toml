@@ -33,7 +33,7 @@ disallow_untyped_defs = true
 exclude = ["tests/", "output/"]
 
 [[tool.mypy.overrides]]
-module = ["ijson", "smart_open", "timdex_dataset_api"]
+module = ["ijson", "smart_open", "timdex_dataset_api", "timdex_dataset_api.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
