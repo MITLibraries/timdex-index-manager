@@ -20,6 +20,11 @@
           "type": "pattern_replace",
           "pattern": "[./;=,?]$",
           "replacement": ""
+        },
+        "remove_identifier_punctuation": {
+          "type": "pattern_replace",
+          "pattern": "\\p{P}",
+          "replacement": ""
         }
       },
       "normalizer": {
@@ -27,6 +32,16 @@
           "type": "custom",
           "filter": [
             "lowercase"
+          ]
+        },
+        "identifier_punctuation_free": {
+          "type": "custom",
+          "char_filter": [
+            "remove_identifier_punctuation"
+          ],
+          "filter": [
+            "lowercase",
+            "trim"
           ]
         }
       }
@@ -221,7 +236,13 @@
             "normalizer": "lowercase"
           },
           "value": {
-            "type": "text"
+            "type": "text",
+            "fields": {
+              "punctuation_free": {
+                "type": "keyword",
+                "normalizer": "identifier_punctuation_free"
+              }
+            }
           }
         }
       },
